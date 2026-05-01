@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>HealthTrack</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+:root{--bg:#0d0d0f;--surface:#13131a;--card:#1a1a24;--border:#252535;--accent:#6ee7b7;--accent2:#818cf8;--danger:#f87171;--warn:#fbbf24;--text:#f0f0f0;--muted:#6b7280;--faint:#1e1e2a;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;overflow-x:hidden;}
+#app{min-height:100vh;}
+
+/* PIN SCREEN */
+.pin-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at top,#1a1a2e 0%,var(--bg) 60%);}
+.pin-logo{text-align:center;margin-bottom:32px;}
+.pin-logo-icon{font-size:48px;margin-bottom:8px;}
+.pin-logo-text{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--accent);letter-spacing:-.02em;}
+.pin-logo-sub{font-size:13px;color:var(--muted);margin-top:4px;}
+.pin-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;width:100%;max-width:400px;}
+.pin-tabs{display:flex;gap:6px;margin-bottom:20px;background:var(--faint);border-radius:12px;padding:4px;}
+.pin-tab{flex:1;padding:9px;border:none;background:none;color:var(--muted);font-family:'DM Sans';font-size:13px;font-weight:500;cursor:pointer;border-radius:9px;transition:all .2s;}
+.pin-tab.on{background:var(--accent);color:#000;}
+.field-label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.pin-input{width:100%;background:var(--faint);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Mono';font-size:16px;padding:12px 14px;outline:none;margin-bottom:12px;transition:border .2s;}
+.pin-input:focus{border-color:var(--accent);}
+.pin-btn{width:100%;padding:13px;background:var(--accent);color:#000;border:none;border-radius:10px;font-family:'Syne';font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s;margin-bottom:0;}
+.pin-btn:hover{opacity:.9;}
+.pin-btn:active{opacity:.7;}
+.pin-btn-outline{width:100%;padding:13px;background:none;color:var(--text);border:1px solid var(--border);border-radius:10px;font-family:'DM Sans';font-size:14px;cursor:pointer;margin-top:10px;}
+.pin-divider{text-align:center;color:var(--muted);font-size:12px;margin:12px 0;}
+.pin-error{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:var(--danger);border-radius:8px;padding:8px 12px;font-size:12px;margin-top:10px;}
+.form-input{width:100%;background:var(--faint);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans';font-size:13px;padding:9px 12px;outline:none;transition:border .2s;}
+.form-input:focus{border-color:var(--accent);}
+.form-select{width:100%;background:var(--faint);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans';font-size:13px;padding:9px 12px;outline:none;cursor:pointer;}
+.form-textarea{width:100%;background:var(--faint);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans';font-size:13px;padding:9px 12px;outline:none;resize:vertical;transition:border .2s;}
+.form-textarea:focus{border-color:var(--accent);}
+.form-grid{display:flex;flex-direction:column;gap:12px;}
+.field-group{display:flex;flex-direction:column;}
+
+/* PATIENT APP */
+.patient-shell{display:flex;flex-direction:column;min-height:100vh;}
+.patient-header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.header-logo{font-family:'Syne';font-size:16px;font-weight:700;color:var(--accent);}
+.header-patient{font-size:12px;color:var(--muted);margin-top:2px;}
+.icon-btn{background:var(--faint);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;padding:6px 10px;cursor:pointer;}
+.patient-nav{display:flex;gap:4px;padding:10px 12px;overflow-x:auto;background:var(--surface);border-bottom:1px solid var(--border);}
+.p-nav{padding:7px 14px;border:1px solid var(--border);border-radius:20px;background:none;color:var(--muted);font-family:'DM Sans';font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;}
+.p-nav.on{background:var(--accent);color:#000;border-color:var(--accent);}
+.patient-main{flex:1;padding:16px;max-width:600px;margin:0 auto;width:100%;}
+.loading-state{text-align:center;color:var(--muted);padding:40px 20px;}
+.empty-state{text-align:center;color:var(--muted);padding:20px;font-size:13px;}
+
+/* LOG PAGE */
+.log-page{display:flex;flex-direction:column;gap:14px;}
+.log-date-nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:4px;}
+.date-nav-btn{background:var(--faint);border:1px solid var(--border);color:var(--text);width:34px;height:34px;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.date-nav-btn:disabled{opacity:.3;cursor:default;}
+.log-date-label{font-family:'Syne';font-size:18px;font-weight:700;}
+
+/* NUTRITION */
+.nutrition-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;}
+.nutrition-card-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px;}
+.macro-rings{display:flex;justify-content:space-around;margin-bottom:14px;}
+.macro-ring{display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;}
+.macro-ring svg{position:absolute;top:0;left:0;}
+.ring-center{width:72px;height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ring-val{font-family:'DM Mono';font-size:15px;font-weight:600;line-height:1;}
+.ring-unit{font-size:9px;color:var(--muted);}
+.ring-label{font-size:11px;color:var(--muted);margin-top:2px;}
+.calorie-bar-wrap{margin-top:4px;}
+.calorie-bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;}
+.calorie-bar-track{height:6px;background:var(--faint);border-radius:3px;overflow:hidden;}
+.calorie-bar-fill{height:100%;background:linear-gradient(to right,#6ee7b7,#34d399);border-radius:3px;transition:width .4s;}
+
+/* SECTION CARDS */
+.section-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;}
+.section-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.add-meal-btn{background:var(--accent);color:#000;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;}
+.activity-badge{margin-top:8px;font-size:12px;color:var(--accent);background:rgba(110,231,183,.1);padding:5px 10px;border-radius:6px;display:inline-block;}
+
+/* MEAL CARDS */
+.meal-card{background:var(--faint);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;}
+.meal-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;}
+.meal-name{font-size:14px;font-weight:600;color:var(--text);}
+.meal-time{font-size:11px;color:var(--muted);margin-top:2px;}
+.meal-desc{font-size:12px;color:var(--muted);margin-bottom:6px;font-style:italic;}
+.meal-photo{width:100%;border-radius:8px;margin-bottom:8px;max-height:180px;object-fit:cover;}
+.meal-macros{display:flex;gap:10px;flex-wrap:wrap;}
+.meal-macro{font-size:12px;font-family:'DM Mono';}
+.meal-delete{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:var(--danger);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;}
+.ai-confidence{font-size:10px;color:var(--muted);margin-top:5px;}
+
+/* WATER */
+.water-btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.water-btn{padding:6px 12px;background:var(--faint);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;}
+.water-btn.on{background:rgba(103,232,249,.15);border-color:#67e8f9;color:#67e8f9;}
+.water-val{font-size:13px;color:var(--muted);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:flex-end;z-index:200;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:90vh;overflow-y:auto;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.modal-title{font-family:'Syne';font-size:17px;font-weight:700;}
+.modal-close{background:var(--faint);border:1px solid var(--border);color:var(--text);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;}
+.meal-type-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.meal-type-btn{padding:5px 12px;border:1px solid var(--border);border-radius:20px;background:none;color:var(--muted);font-size:12px;cursor:pointer;}
+.meal-type-btn.on{border-color:var(--accent);color:var(--accent);background:rgba(110,231,183,.08);}
+.method-tabs{display:flex;gap:4px;margin-bottom:12px;}
+.method-tab{padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;color:var(--muted);}
+.method-tab.on{border-color:var(--accent);color:var(--accent);background:rgba(110,231,183,.08);}
+.photo-upload-zone{border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;margin-bottom:10px;}
+.analyse-btn{width:100%;padding:11px;background:rgba(129,140,248,.15);border:1px solid rgba(129,140,248,.3);color:#818cf8;border-radius:10px;font-family:'DM Sans';font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;}
+.result-header{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 8px;}
+.result-item{border-bottom:1px solid var(--faint);padding:6px 0;}
+.result-item-name{font-size:13px;color:var(--text);}
+.result-item-macros{font-size:11px;color:var(--muted);font-family:'DM Mono';margin-top:2px;}
+.result-totals{background:var(--faint);border-radius:8px;padding:10px;margin-top:8px;font-size:12px;}
+
+/* JOURNAL */
+.journal-page{display:flex;flex-direction:column;gap:14px;}
+.journal-section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;}
+.mood-row{display:flex;gap:6px;flex-wrap:wrap;}
+.mood-btn{flex:1;min-width:70px;padding:8px 4px;border:1px solid var(--border);border-radius:10px;background:none;color:var(--muted);font-size:12px;cursor:pointer;text-align:center;}
+.mood-btn.on{border-color:var(--accent);background:rgba(110,231,183,.1);color:var(--accent);}
+.slider{width:100%;accent-color:var(--accent);}
+
+/* DOCTOR */
+.doctor-shell{display:flex;flex-direction:column;min-height:100vh;}
+.doctor-header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.doctor-badge{background:rgba(129,140,248,.15);border:1px solid rgba(129,140,248,.3);color:#818cf8;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;}
+.doctor-tabs{display:flex;gap:6px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface);}
+.d-tab{padding:8px 20px;border:1px solid var(--border);border-radius:20px;background:none;color:var(--muted);font-family:'DM Sans';font-size:13px;cursor:pointer;}
+.d-tab.on{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600;}
+.doctor-main{flex:1;padding:16px;max-width:900px;margin:0 auto;width:100%;}
+.patients-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.patients-count{font-family:'Syne';font-size:20px;font-weight:700;}
+.add-patient-btn{background:var(--accent);color:#000;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;}
+.patients-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.patient-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;cursor:pointer;transition:border-color .2s;}
+.patient-card:hover{border-color:var(--accent);}
+.patient-card-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.patient-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6ee7b7,#818cf8);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#000;flex-shrink:0;}
+.patient-avatar.large{width:56px;height:56px;font-size:22px;}
+.patient-card-name{font-size:14px;font-weight:600;color:var(--text);}
+.patient-card-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.alert-dot{width:20px;height:20px;border-radius:50%;background:var(--danger);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ok-dot{width:20px;height:20px;border-radius:50%;background:#22c55e;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.patient-card-stats{display:flex;gap:8px;margin-bottom:10px;}
+.pstat{flex:1;background:var(--faint);border-radius:8px;padding:8px;text-align:center;}
+.pstat-val{font-family:'DM Mono';font-size:14px;font-weight:600;color:var(--text);}
+.pstat-label{font-size:10px;color:var(--muted);margin-top:2px;}
+.patient-card-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.ptag{font-size:10px;padding:2px 8px;border-radius:8px;background:var(--faint);color:var(--muted);}
+.ptag-warn{background:rgba(251,191,36,.1);color:var(--warn);}
+.back-btn{background:none;border:none;color:var(--muted);font-family:'DM Sans';font-size:14px;cursor:pointer;padding:0 0 16px;}
+.patient-detail-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;flex-wrap:wrap;}
+.patient-detail-name{font-family:'Syne';font-size:22px;font-weight:700;}
+.patient-detail-meta{font-size:12px;color:var(--muted);margin-top:3px;}
+.condition-tag{font-size:11px;color:var(--warn);background:rgba(251,191,36,.1);padding:3px 8px;border-radius:6px;display:inline-block;margin-top:5px;}
+.ai-summary-btn{background:rgba(129,140,248,.15);border:1px solid rgba(129,140,248,.3);color:#818cf8;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.ai-summary-box{background:var(--card);border:1px solid rgba(129,140,248,.3);border-radius:16px;padding:18px;margin-bottom:16px;}
+.ai-summary-title{font-size:12px;color:#818cf8;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.ai-summary-content{font-size:13px;color:#ccc;line-height:1.8;}
+.detail-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.detail-tab{padding:7px 16px;border:1px solid var(--border);border-radius:20px;background:none;color:var(--muted);font-size:12px;cursor:pointer;}
+.detail-tab.on{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600;}
+.avg-title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+.avg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;}
+.avg-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.avg-label{font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+.avg-val{font-family:'DM Mono';font-size:18px;font-weight:600;}
+.activity-stat-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--faint);}
+.activity-stat-name{font-size:12px;color:var(--text);width:180px;flex-shrink:0;}
+.activity-stat-bar-wrap{flex:1;height:6px;background:var(--faint);border-radius:3px;overflow:hidden;}
+.activity-stat-bar{height:100%;background:var(--accent);border-radius:3px;}
+.activity-stat-count{font-size:12px;color:var(--muted);font-family:'DM Mono';width:50px;text-align:right;}
+.alert-box{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:10px;margin-top:10px;font-size:12px;color:var(--warn);}
+.log-summary-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--faint);flex-wrap:wrap;}
+.log-summary-date{font-size:13px;font-weight:500;color:var(--text);width:90px;flex-shrink:0;}
+.log-summary-activity{font-size:12px;color:var(--muted);flex:1;min-width:100px;}
+.log-summary-macros{font-size:11px;font-family:'DM Mono';color:var(--muted);}
+.log-summary-meals{font-size:11px;color:var(--muted);width:50px;text-align:right;}
+.add-note-box{margin-bottom:16px;}
+.doctor-note-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;}
+.note-date{font-size:11px;color:var(--muted);margin-bottom:5px;}
+.note-text{font-size:13px;color:var(--text);line-height:1.6;}
+.history-title{font-family:'Syne';font-size:18px;font-weight:700;margin-bottom:14px;}
+.history-row{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;transition:border-color .2s;}
+.history-row:hover{border-color:var(--accent);}
+.history-date{font-size:14px;font-weight:600;color:var(--text);}
+.history-activity{font-size:12px;color:var(--muted);margin-top:3px;}
+.history-macros{font-size:12px;font-family:'DM Mono';display:flex;gap:8px;justify-content:flex-end;}
+.history-meals{font-size:11px;color:var(--muted);margin-top:3px;}
+.alert-row{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:8px;cursor:pointer;}
+.alert-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.alert-red{background:rgba(248,113,113,.15);}
+.alert-amber{background:rgba(251,191,36,.15);}
+.alert-orange{background:rgba(251,146,60,.15);}
+.alert-patient{font-size:14px;font-weight:600;color:var(--text);}
+.alert-msg{font-size:12px;color:var(--muted);margin-top:2px;}
+.profile-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;}
+.profile-avatar{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#6ee7b7,#818cf8);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#000;flex-shrink:0;}
+.profile-name{font-family:'Syne';font-size:22px;font-weight:700;}
+.profile-meta{font-size:13px;color:var(--muted);margin-top:3px;}
+.profile-id{font-size:11px;color:var(--muted);font-family:'DM Mono';margin-top:3px;}
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.profile-field{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+.profile-val{font-size:13px;color:var(--text);margin-top:3px;}
+.global-loader{position:fixed;inset:0;background:rgba(13,13,15,.9);display:flex;align-items:center;justify-content:center;z-index:999;color:var(--accent);font-size:14px;}
+@media(max-width:600px){.patients-grid{grid-template-columns:1fr;}.avg-grid{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ── FIREBASE CONFIG ───────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyBMn15Oqgp0vGCvmMF9q4_835Cz_ZNY9qM",
+  authDomain: "healthtracker-5eee5.firebaseapp.com",
+  projectId: "healthtracker-5eee5",
+  storageBucket: "healthtracker-5eee5.firebasestorage.app",
+  messagingSenderId: "723390840680",
+  appId: "1:723390840680:web:866a0eb6ab042b8ba2e0dd"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const GEMINI_KEY = "AIzaSyCchzyOkA4QkAkB9r04g-VZgtTDJIcq9t0";
+const DOCTOR_PIN = "1234";
+
+// ── STATE ─────────────────────────────────────────────────────
+let currentUser = null;
+let currentDate = new Date().toISOString().split('T')[0];
+let currentLogDay = currentDate;
+let _currentLog = {};
+let _journalLog = {};
+let _pendingMealData = null;
+let _pendingPhotoBase64 = null;
+let _pendingPhotoMime = null;
+let _selectedMealType = '';
+let _patientDetailData = {};
+
+// ── HELPERS ───────────────────────────────────────────────────
+function showLoading(msg) {
+  let el = document.getElementById('global-loader');
+  if (!el) { el = document.createElement('div'); el.id = 'global-loader'; el.className = 'global-loader'; document.body.appendChild(el); }
+  el.textContent = msg || 'Loading...'; el.style.display = 'flex';
+}
+function hideLoading() { const el = document.getElementById('global-loader'); if (el) el.remove(); }
+function closeModal(id) { const el = document.getElementById(id); if (el) el.remove(); }
+function logout() { currentUser = null; showPinScreen(); }
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.floor((today - d) / 864e5);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  return d.toLocaleDateString('en-IN', {weekday:'short', day:'numeric', month:'short'});
+}
+
+function recalcTotals(meals) {
+  const t = {protein:0, carbs:0, fat:0, calories:0, fibre:0};
+  (meals||[]).forEach(m => {
+    if (m.nutrition) {
+      t.protein += m.nutrition.protein||0; t.carbs += m.nutrition.carbs||0;
+      t.fat += m.nutrition.fat||0; t.calories += m.nutrition.calories||0;
+      t.fibre += m.nutrition.fibre||0;
+    }
+  });
+  return {protein:Math.round(t.protein), carbs:Math.round(t.carbs), fat:Math.round(t.fat), calories:Math.round(t.calories), fibre:Math.round(t.fibre)};
+}
+
+function macroRing(label, val, max, color) {
+  const pct = Math.min(100, Math.round(val/max*100));
+  const r = 28, circ = 2*Math.PI*r, dash = circ*pct/100;
+  return `<div class="macro-ring">
+    <svg width="72" height="72" viewBox="0 0 72 72">
+      <circle cx="36" cy="36" r="${r}" fill="none" stroke="#1e1e1e" stroke-width="6"/>
+      <circle cx="36" cy="36" r="${r}" fill="none" stroke="${color}" stroke-width="6"
+        stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${circ/4}" stroke-linecap="round"/>
+    </svg>
+    <div class="ring-center"><div class="ring-val" style="color:${color}">${val}</div><div class="ring-unit">g</div></div>
+    <div class="ring-label">${label}</div>
+  </div>`;
+}
+
+// ── FIREBASE OPS ──────────────────────────────────────────────
+async function getPatient(pid) {
+  const d = await db.collection('patients').doc(pid).get();
+  return d.exists ? {id:pid, ...d.data()} : null;
+}
+async function savePatient(pid, data) {
+  await db.collection('patients').doc(pid).set(data, {merge:true});
+}
+async function getDayLog(pid, date) {
+  const d = await db.collection('patients').doc(pid).collection('logs').doc(date).get();
+  return d.exists ? d.data() : {meals:[], activity:null, journal:'', mood:null, energy:5, sleep:7, totals:{protein:0,carbs:0,fat:0,calories:0,fibre:0}};
+}
+async function saveDayLog(pid, date, data) {
+  await db.collection('patients').doc(pid).collection('logs').doc(date).set({...data, updatedAt: new Date().toISOString()}, {merge:true});
+}
+async function getAllPatients() {
+  const snap = await db.collection('patients').get();
+  return snap.docs.map(d => ({id:d.id, ...d.data()}));
+}
+async function getPatientLogs(pid, days) {
+  const dates = [], logs = {};
+  for (let i=0; i<days; i++) { const d=new Date(); d.setDate(d.getDate()-i); dates.push(d.toISOString().split('T')[0]); }
+  await Promise.all(dates.map(async date => { logs[date] = await getDayLog(pid, date); }));
+  return logs;
+}
+async function saveDoctorNote(pid, note) {
+  await db.collection('patients').doc(pid).collection('doctorNotes').add({note, date: new Date().toISOString()});
+}
+async function getDoctorNotes(pid) {
+  const snap = await db.collection('patients').doc(pid).collection('doctorNotes').orderBy('date','desc').get();
+  return snap.docs.map(d => d.data());
+}
+
+// ── GEMINI ────────────────────────────────────────────────────
+async function callGemini(prompt) {
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({contents:[{parts:[{text:prompt}]}], generationConfig:{maxOutputTokens:800, temperature:0.4}})
+  });
+  const d = await r.json();
+  return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+async function analysePhoto(base64, mimeType) {
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({contents:[{parts:[
+      {inline_data:{mime_type:mimeType, data:base64}},
+      {text:'Analyse this food image. List each food item visible with estimated portion. Respond ONLY in this JSON format:\n{"items":[{"name":"item","portion":"1 bowl","protein":9,"carbs":20,"fat":1,"calories":122,"fibre":4}],"totals":{"protein":0,"carbs":0,"fat":0,"calories":0,"fibre":0,"confidence":"medium"},"description":"Brief meal description"}'}
+    ]}]})
+  });
+  const d = await r.json();
+  try { return JSON.parse((d.candidates?.[0]?.content?.parts?.[0]?.text||'{}').replace(/```json|```/g,'').trim()); }
+  catch(e) { return null; }
+}
+
+async function extractNutritionFromText(text) {
+  const prompt = `Analyse this meal and estimate nutrition. Be specific about Indian foods.\nMeal: "${text}"\nRespond ONLY in JSON:\n{"items":[{"name":"item","portion":"portion","protein":0,"carbs":0,"fat":0,"calories":0,"fibre":0}],"totals":{"protein":0,"carbs":0,"fat":0,"calories":0,"fibre":0,"confidence":"medium"}}`;
+  const resp = await callGemini(prompt);
+  try { return JSON.parse(resp.replace(/```json|```/g,'').trim()); }
+  catch(e) { return null; }
+}
+
+// ── PIN SCREEN ────────────────────────────────────────────────
+function showPinScreen() {
+  document.getElementById('app').innerHTML = `
+  <div class="pin-screen">
+    <div class="pin-logo">
+      <div class="pin-logo-icon">❤️</div>
+      <div class="pin-logo-text">HealthTrack</div>
+      <div class="pin-logo-sub">Patient & Doctor Portal</div>
+    </div>
+    <div class="pin-card">
+      <div class="pin-tabs">
+        <button class="pin-tab on" onclick="switchPinTab('patient',this)">I'm a Patient</button>
+        <button class="pin-tab" onclick="switchPinTab('doctor',this)">I'm a Doctor</button>
+      </div>
+      <div id="pin-patient-form">
+        <label class="field-label">Patient ID</label>
+        <input type="text" id="pin-pid" class="pin-input" placeholder="e.g. P001" maxlength="10">
+        <button class="pin-btn" onclick="loginPatient()">Enter Portal →</button>
+        <div class="pin-divider">— or —</div>
+        <button class="pin-btn-outline" onclick="showCreatePatient()">+ Create New Patient Profile</button>
+      </div>
+      <div id="pin-doctor-form" style="display:none">
+        <label class="field-label">Doctor PIN</label>
+        <input type="password" id="pin-dpin" class="pin-input" placeholder="Enter PIN" maxlength="8">
+        <button class="pin-btn" onclick="loginDoctor()">Open Dashboard →</button>
+      </div>
+      <div id="pin-error" style="display:none" class="pin-error"></div>
+    </div>
+  </div>`;
+}
+
+function switchPinTab(tab, el) {
+  document.querySelectorAll('.pin-tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('pin-patient-form').style.display = tab==='patient' ? 'block' : 'none';
+  document.getElementById('pin-doctor-form').style.display = tab==='doctor' ? 'block' : 'none';
+  document.getElementById('pin-error').style.display = 'none';
+}
+
+function showPinError(msg) {
+  const el = document.getElementById('pin-error');
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+
+async function loginPatient() {
+  const id = (document.getElementById('pin-pid').value||'').trim().toUpperCase();
+  if (!id) { showPinError('Enter your Patient ID'); return; }
+  showLoading('Finding your profile...');
+  try {
+    const patient = await getPatient(id);
+    hideLoading();
+    if (!patient) { showPinError('Patient ID not found. Create a new profile below.'); return; }
+    currentUser = {type:'patient', id, profile:patient};
+    showPatientApp();
+  } catch(e) { hideLoading(); showPinError('Error: ' + e.message); }
+}
+
+async function loginDoctor() {
+  const pin = (document.getElementById('pin-dpin').value||'').trim();
+  if (pin !== DOCTOR_PIN) { showPinError('Incorrect PIN'); return; }
+  showLoading('Loading dashboard...');
+  currentUser = {type:'doctor', id:'doctor'};
+  await showDoctorApp();
+}
+
+// ── CREATE PATIENT ────────────────────────────────────────────
+function showCreatePatient() {
+  document.getElementById('app').innerHTML = `
+  <div class="pin-screen">
+    <div class="pin-logo"><div class="pin-logo-icon">❤️</div><div class="pin-logo-text">HealthTrack</div></div>
+    <div class="pin-card" style="max-width:480px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+        <button onclick="showPinScreen()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1">←</button>
+        <div style="font-size:16px;font-weight:600;color:var(--text)">New Patient Profile</div>
+      </div>
+      <div class="form-grid">
+        <div class="field-group">
+          <label class="field-label">Patient ID <span style="color:var(--muted);font-size:10px">(e.g. P001 — used to log in)</span></label>
+          <input type="text" id="np-id" class="form-input" placeholder="P001" style="text-transform:uppercase">
+        </div>
+        <div class="field-group"><label class="field-label">Full Name</label><input type="text" id="np-name" class="form-input" placeholder="Rajesh Kumar"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="field-group"><label class="field-label">Age</label><input type="number" id="np-age" class="form-input" placeholder="38"></div>
+          <div class="field-group"><label class="field-label">Gender</label><select id="np-gender" class="form-select"><option>Male</option><option>Female</option><option>Other</option></select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="field-group"><label class="field-label">Height (cm)</label><input type="number" id="np-height" class="form-input" placeholder="170"></div>
+          <div class="field-group"><label class="field-label">Weight (kg)</label><input type="number" id="np-weight" class="form-input" placeholder="70"></div>
+        </div>
+        <div class="field-group"><label class="field-label">Dietary style</label>
+          <select id="np-diet" class="form-select">
+            <option>Omnivore</option><option>Vegetarian</option><option>Vegan</option>
+            <option>Eggetarian</option><option>Jain vegetarian</option><option>Keto</option><option>Other</option>
+          </select></div>
+        <div class="field-group"><label class="field-label">Medical conditions (optional)</label><input type="text" id="np-conditions" class="form-input" placeholder="Diabetes, hypertension..."></div>
+        <div class="field-group"><label class="field-label">Allergies / restrictions (optional)</label><input type="text" id="np-allergies" class="form-input" placeholder="Gluten, dairy..."></div>
+        <div class="field-group"><label class="field-label">Health goal</label>
+          <select id="np-goal" class="form-select">
+            <option>Weight loss</option><option>Weight gain / muscle building</option>
+            <option>Maintain weight</option><option>Manage diabetes</option>
+            <option>Manage hypertension</option><option>Improve fitness</option>
+            <option>Post-surgery recovery</option><option>General health improvement</option>
+          </select></div>
+      </div>
+      <button class="pin-btn" style="margin-top:16px" onclick="createPatient()">Create Profile →</button>
+      <div id="create-error" style="display:none" class="pin-error"></div>
+    </div>
+  </div>`;
+}
+
+async function createPatient() {
+  const id = (document.getElementById('np-id').value||'').trim().toUpperCase();
+  const name = (document.getElementById('np-name').value||'').trim();
+  const errEl = document.getElementById('create-error');
+  if (!id || !name) { errEl.textContent='Patient ID and name are required'; errEl.style.display='block'; return; }
+  showLoading('Creating profile...');
+  try {
+    const existing = await getPatient(id);
+    if (existing) { hideLoading(); errEl.textContent='Patient ID already exists. Choose a different one.'; errEl.style.display='block'; return; }
+    const profile = {
+      name, age:document.getElementById('np-age').value||'',
+      gender:document.getElementById('np-gender').value,
+      height:document.getElementById('np-height').value||'',
+      weight:document.getElementById('np-weight').value||'',
+      dietStyle:document.getElementById('np-diet').value,
+      conditions:document.getElementById('np-conditions').value||'',
+      allergies:document.getElementById('np-allergies').value||'',
+      goal:document.getElementById('np-goal').value,
+      createdAt:new Date().toISOString(),
+      targets:{protein:100, calories:2000, activityDays:4}
+    };
+    await savePatient(id, profile);
+    currentUser = {type:'patient', id, profile:{id, ...profile}};
+    hideLoading();
+    showPatientApp();
+  } catch(e) { hideLoading(); errEl.textContent='Error: '+e.message; errEl.style.display='block'; }
+}
+
+// ── PATIENT APP ───────────────────────────────────────────────
+function showPatientApp() {
+  document.getElementById('app').innerHTML = `
+  <div class="patient-shell">
+    <div class="patient-header">
+      <div><div class="header-logo">❤️ HealthTrack</div><div class="header-patient">${currentUser.profile.name}</div></div>
+      <div style="display:flex;gap:6px">
+        <button class="icon-btn" onclick="showPatientProfile()">👤</button>
+        <button class="icon-btn" onclick="logout()">⎋</button>
+      </div>
+    </div>
+    <div class="patient-nav">
+      <button class="p-nav on" id="nav-today" onclick="patientNav('today',this)">📅 Today</button>
+      <button class="p-nav" id="nav-history" onclick="patientNav('history',this)">📊 History</button>
+      <button class="p-nav" id="nav-journal" onclick="patientNav('journal',this)">🧠 Journal</button>
+      <button class="p-nav" id="nav-notes" onclick="patientNav('notes',this)">💬 Doctor notes</button>
+    </div>
+    <div class="patient-main" id="patient-main"><div class="loading-state">Loading...</div></div>
+  </div>`;
+  loadTodayLog();
+}
+
+async function patientNav(tab, el) {
+  document.querySelectorAll('.p-nav').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('patient-main').innerHTML = '<div class="loading-state">Loading...</div>';
+  if (tab==='today') await loadTodayLog();
+  if (tab==='history') await loadHistory();
+  if (tab==='journal') await loadJournalTab();
+  if (tab==='notes') await loadDoctorNotesPatient();
+}
+
+async function loadTodayLog() {
+  currentLogDay = currentDate;
+  const log = await getDayLog(currentUser.id, currentDate);
+  renderLogDay(log, currentDate);
+}
+
+async function navigateLogDay(dir) {
+  const d = new Date(currentLogDay+'T00:00:00'); d.setDate(d.getDate()+dir);
+  const nd = d.toISOString().split('T')[0];
+  if (nd > currentDate) return;
+  currentLogDay = nd;
+  showLoading('Loading...');
+  const log = await getDayLog(currentUser.id, nd);
+  hideLoading();
+  renderLogDay(log, nd);
+}
+
+function renderLogDay(log, date) {
+  _currentLog = log;
+  const meals = log.meals||[];
+  const totals = recalcTotals(meals);
+  const p = currentUser.profile;
+  const ptarget = p.targets?.protein||100;
+  const ctarget = p.targets?.calories||2000;
+  const isToday = date===currentDate;
+  const actTypes = ['Strength training','Cardio / Run','Yoga / Flexibility','Walk (light)','Sports / game','Sedentary / desk day','Travel day','Rest / recovery','Sick day','Custom'];
+
+  document.getElementById('patient-main').innerHTML = `
+  <div class="log-page">
+    <div class="log-date-nav">
+      <button class="date-nav-btn" onclick="navigateLogDay(-1)">‹</button>
+      <div class="log-date-label">${formatDate(date)}</div>
+      <button class="date-nav-btn" onclick="navigateLogDay(1)" ${isToday?'disabled':''}>›</button>
+    </div>
+
+    <div class="nutrition-card">
+      <div class="nutrition-card-title">Nutrition today</div>
+      <div class="macro-rings">
+        ${macroRing('Protein',totals.protein,ptarget,'#4ade80')}
+        ${macroRing('Carbs',totals.carbs,300,'#60a5fa')}
+        ${macroRing('Fat',totals.fat,80,'#f472b6')}
+        ${macroRing('Fibre',totals.fibre,30,'#fb923c')}
+      </div>
+      <div class="calorie-bar-wrap">
+        <div class="calorie-bar-label"><span>${totals.calories} kcal</span><span style="color:var(--muted)">/ ${ctarget} target</span></div>
+        <div class="calorie-bar-track"><div class="calorie-bar-fill" style="width:${Math.min(100,Math.round(totals.calories/ctarget*100))}%"></div></div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">Activity</div>
+      <div style="display:grid;grid-template-columns:1fr 80px;gap:8px">
+        <select class="form-select" id="activity-type" onchange="saveActivityType()">
+          <option value="">Select activity type...</option>
+          ${actTypes.map(a=>`<option value="${a}" ${log.activity?.type===a?'selected':''}>${a}</option>`).join('')}
+        </select>
+        <input type="number" class="form-input" id="activity-duration" placeholder="min" value="${log.activity?.duration||''}" onchange="saveActivityDuration()">
+      </div>
+      ${log.activity?.type?`<div class="activity-badge">✓ ${log.activity.type}${log.activity.duration?' · '+log.activity.duration+' min':''}</div>`:''}
+    </div>
+
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">Meals (${meals.length})</div>
+        ${isToday?`<button class="add-meal-btn" onclick="showAddMeal()">+ Add meal</button>`:''}
+      </div>
+      <div id="meals-list">
+        ${meals.length===0?`<div class="empty-state">No meals logged yet.</div>`:''}
+        ${meals.map((m,i)=>renderMealCard(m,i,isToday)).join('')}
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">Water intake</div>
+      <div class="water-btns">
+        ${[0.5,1,1.5,2,2.5,3,3.5,4].map(v=>`<button class="water-btn ${(log.water||0)>=v?'on':''}" onclick="setWater(${v})">${v}L</button>`).join('')}
+      </div>
+      <div class="water-val" id="water-display">${log.water||0}L logged</div>
+    </div>
+  </div>`;
+}
+
+function renderMealCard(meal, idx, isToday) {
+  const n = meal.nutrition||{};
+  return `<div class="meal-card">
+    <div class="meal-card-header">
+      <div><div class="meal-name">${meal.name||'Meal'}</div><div class="meal-time">${meal.time||''} ${meal.mealType?'· '+meal.mealType:''}</div></div>
+      ${isToday?`<button class="meal-delete" onclick="deleteMeal(${idx})">✕</button>`:''}
+    </div>
+    ${meal.description?`<div class="meal-desc">${meal.description}</div>`:''}
+    ${meal.photoUrl?`<img src="${meal.photoUrl}" class="meal-photo" alt="meal">`:''}
+    <div class="meal-macros">
+      <span class="meal-macro" style="color:#4ade80">P: ${Math.round(n.protein||0)}g</span>
+      <span class="meal-macro" style="color:#60a5fa">C: ${Math.round(n.carbs||0)}g</span>
+      <span class="meal-macro" style="color:#f472b6">F: ${Math.round(n.fat||0)}g</span>
+      <span class="meal-macro" style="color:#fbbf24">${Math.round(n.calories||0)} kcal</span>
+      ${n.fibre?`<span class="meal-macro" style="color:#fb923c">Fi: ${Math.round(n.fibre)}g</span>`:''}
+    </div>
+    ${meal.aiConfidence?`<div class="ai-confidence">AI estimate · ${meal.aiConfidence} confidence</div>`:''}
+  </div>`;
+}
+
+function showAddMeal() {
+  _pendingMealData = null; _pendingPhotoBase64 = null; _pendingPhotoMime = null; _selectedMealType = '';
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay'; overlay.id = 'add-meal-modal';
+  overlay.innerHTML = `
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add meal</div>
+      <button class="modal-close" onclick="closeModal('add-meal-modal')">✕</button>
+    </div>
+    <div class="meal-type-row">
+      ${['Breakfast','Lunch','Dinner','Snack','Pre-workout','Post-workout','Other'].map(t=>`<button class="meal-type-btn" onclick="selectMealType('${t}',this)">${t}</button>`).join('')}
+    </div>
+    <div class="field-group" style="margin-bottom:10px">
+      <label class="field-label">Meal name (optional)</label>
+      <input type="text" class="form-input" id="meal-name-input" placeholder="e.g. Dal chawal, Grilled chicken...">
+    </div>
+    <div class="method-tabs">
+      <div class="method-tab on" onclick="switchMethod('text',this)">📝 Describe</div>
+      <div class="method-tab" onclick="switchMethod('photo',this)">📷 Photo</div>
+    </div>
+    <div id="method-text-panel">
+      <textarea class="form-textarea" id="meal-text-input" rows="4" placeholder="Describe what you ate with portions — e.g. '2 chapati, 1 bowl dal, 100g paneer, mixed salad, 1 glass lassi'"></textarea>
+      <button class="analyse-btn" onclick="analyseText()">🤖 Analyse nutrition</button>
+    </div>
+    <div id="method-photo-panel" style="display:none">
+      <div class="photo-upload-zone" onclick="document.getElementById('meal-photo-input').click()">
+        <div id="photo-preview-wrap"><div style="font-size:32px">📷</div><div style="font-size:13px;color:var(--muted);margin-top:6px">Tap to take photo or choose from gallery</div></div>
+      </div>
+      <input type="file" id="meal-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoSelect(this)">
+      <button class="analyse-btn" id="photo-analyse-btn" style="display:none" onclick="analysePhotoMeal()">🤖 Analyse photo</button>
+    </div>
+    <div id="nutrition-result" style="display:none">
+      <div class="result-header">AI nutrition estimate</div>
+      <div id="nutrition-items"></div>
+      <div class="result-totals" id="result-totals"></div>
+    </div>
+    <button class="pin-btn" id="save-meal-btn" style="margin-top:14px;display:none" onclick="saveMeal()">✓ Save meal</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+function selectMealType(type, el) {
+  document.querySelectorAll('.meal-type-btn').forEach(b => b.classList.remove('on'));
+  el.classList.add('on'); _selectedMealType = type;
+}
+
+function switchMethod(method, el) {
+  document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('method-text-panel').style.display = method==='text'?'block':'none';
+  document.getElementById('method-photo-panel').style.display = method==='photo'?'block':'none';
+}
+
+async function analyseText() {
+  const text = (document.getElementById('meal-text-input').value||'').trim();
+  if (!text) { alert('Describe your meal first'); return; }
+  const btn = document.querySelector('.analyse-btn');
+  btn.textContent = '⏳ Analysing...'; btn.disabled = true;
+  const result = await extractNutritionFromText(text);
+  btn.textContent = '🤖 Analyse nutrition'; btn.disabled = false;
+  if (!result) { alert('Could not analyse. Try being more specific.'); return; }
+  showNutritionResult(result);
+}
+
+function handlePhotoSelect(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    _pendingPhotoBase64 = e.target.result.split(',')[1];
+    _pendingPhotoMime = file.type;
+    document.getElementById('photo-preview-wrap').innerHTML = `<img src="${e.target.result}" style="width:100%;border-radius:8px;max-height:200px;object-fit:cover">`;
+    document.getElementById('photo-analyse-btn').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analysePhotoMeal() {
+  if (!_pendingPhotoBase64) { alert('Select a photo first'); return; }
+  const btn = document.getElementById('photo-analyse-btn');
+  btn.textContent = '⏳ Analysing photo...'; btn.disabled = true;
+  const result = await analysePhoto(_pendingPhotoBase64, _pendingPhotoMime);
+  btn.textContent = '🤖 Analyse photo'; btn.disabled = false;
+  if (!result) { alert('Could not analyse photo. Try a clearer image.'); return; }
+  showNutritionResult(result);
+}
+
+function showNutritionResult(result) {
+  _pendingMealData = result;
+  document.getElementById('nutrition-result').style.display = 'block';
+  const items = result.items||[];
+  document.getElementById('nutrition-items').innerHTML = items.map(it =>
+    `<div class="result-item"><div class="result-item-name">${it.name} <span style="color:var(--muted);font-size:11px">${it.portion||''}</span></div><div class="result-item-macros">P:${it.protein||0}g C:${it.carbs||0}g F:${it.fat||0}g ${it.calories||0}kcal</div></div>`
+  ).join('');
+  const t = result.totals||{};
+  document.getElementById('result-totals').innerHTML = `
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <span style="color:#4ade80">Protein: ${t.protein||0}g</span>
+      <span style="color:#60a5fa">Carbs: ${t.carbs||0}g</span>
+      <span style="color:#f472b6">Fat: ${t.fat||0}g</span>
+      <span style="color:#fbbf24">${t.calories||0} kcal</span>
+      ${t.fibre?`<span style="color:#fb923c">Fibre: ${t.fibre}g</span>`:''}
+    </div>
+    ${result.description?`<div style="font-size:12px;color:var(--muted);margin-top:4px">${result.description}</div>`:''}
+    <div style="font-size:11px;color:#6b7280;margin-top:4px">Confidence: ${t.confidence||'medium'} · AI estimate ±15%</div>`;
+  document.getElementById('save-meal-btn').style.display = 'block';
+}
+
+async function saveMeal() {
+  const name = (document.getElementById('meal-name-input').value||'').trim() || (_selectedMealType||'Meal');
+  const time = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const meal = {
+    name, mealType:_selectedMealType||'',
+    time, description:(document.getElementById('meal-text-input')?.value||'').trim(),
+    nutrition:_pendingMealData?.totals||{protein:0,carbs:0,fat:0,calories:0,fibre:0},
+    nutritionItems:_pendingMealData?.items||[],
+    aiConfidence:_pendingMealData?.totals?.confidence||'',
+    photoUrl:_pendingPhotoBase64?`data:${_pendingPhotoMime};base64,${_pendingPhotoBase64}`:null,
+    addedAt:new Date().toISOString()
+  };
+  const log = _currentLog||{meals:[]};
+  if (!log.meals) log.meals=[];
+  log.meals.push(meal);
+  log.totals = recalcTotals(log.meals);
+  await saveDayLog(currentUser.id, currentLogDay, log);
+  _currentLog = log;
+  closeModal('add-meal-modal');
+  renderLogDay(log, currentLogDay);
+}
+
+async function deleteMeal(idx) {
+  if (!confirm('Remove this meal?')) return;
+  _currentLog.meals.splice(idx,1);
+  _currentLog.totals = recalcTotals(_currentLog.meals);
+  await saveDayLog(currentUser.id, currentLogDay, _currentLog);
+  renderLogDay(_currentLog, currentLogDay);
+}
+
+async function saveActivityType() {
+  const type = document.getElementById('activity-type').value;
+  if (!_currentLog.activity) _currentLog.activity={};
+  _currentLog.activity.type = type;
+  await saveDayLog(currentUser.id, currentLogDay, _currentLog);
+}
+
+async function saveActivityDuration() {
+  const dur = document.getElementById('activity-duration').value;
+  if (!_currentLog.activity) _currentLog.activity={};
+  _currentLog.activity.duration = dur;
+  await saveDayLog(currentUser.id, currentLogDay, _currentLog);
+}
+
+async function setWater(val) {
+  _currentLog.water = val;
+  await saveDayLog(currentUser.id, currentLogDay, _currentLog);
+  document.getElementById('water-display').textContent = val+'L logged';
+  document.querySelectorAll('.water-btn').forEach(b => b.classList.toggle('on', parseFloat(b.textContent)<=val));
+}
+
+async function loadHistory() {
+  const logs = await getPatientLogs(currentUser.id, 30);
+  const dates = Object.keys(logs).sort((a,b)=>b.localeCompare(a));
+  let html = `<div><div class="history-title">Last 30 days</div>`;
+  let any = false;
+  for (const date of dates) {
+    const log = logs[date];
+    if (!log.meals?.length && !log.activity && !log.journal) continue;
+    any = true;
+    const t = recalcTotals(log.meals||[]);
+    html += `<div class="history-row" onclick="viewHistoryDay('${date}')">
+      <div><div class="history-date">${formatDate(date)}</div><div class="history-activity">${log.activity?.type||'No activity logged'}</div></div>
+      <div style="text-align:right"><div class="history-macros"><span style="color:#4ade80">P:${t.protein}g</span><span style="color:#fbbf24">${t.calories}kcal</span></div><div class="history-meals">${log.meals?.length||0} meals</div></div>
+    </div>`;
+  }
+  if (!any) html += `<div class="empty-state">No history yet. Start logging today!</div>`;
+  html += `</div>`;
+  document.getElementById('patient-main').innerHTML = html;
+}
+
+async function viewHistoryDay(date) {
+  currentLogDay = date;
+  showLoading('Loading...');
+  const log = await getDayLog(currentUser.id, date);
+  hideLoading();
+  document.querySelectorAll('.p-nav').forEach(b=>b.classList.remove('on'));
+  document.getElementById('nav-today').classList.add('on');
+  renderLogDay(log, date);
+}
+
+async function loadJournalTab() {
+  const log = await getDayLog(currentUser.id, currentDate);
+  _journalLog = log;
+  document.getElementById('patient-main').innerHTML = `
+  <div class="journal-page">
+    <div class="journal-section">
+      <div class="section-title">How are you feeling today?</div>
+      <div class="mood-row">
+        ${['😣 Bad','😕 Low','😐 Okay','🙂 Good','😄 Great'].map((m,i)=>`<button class="mood-btn ${log.mood===i?'on':''}" onclick="setMoodVal(${i},this)">${m}</button>`).join('')}
+      </div>
+    </div>
+    <div class="journal-section">
+      <div class="section-title">Vitals</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label class="field-label">Energy (1-10)</label><input type="range" min="1" max="10" value="${log.energy||5}" class="slider" id="j-energy" oninput="document.getElementById('j-ev').textContent=this.value"><div style="text-align:right;font-size:13px;color:var(--accent)" id="j-ev">${log.energy||5}</div></div>
+        <div><label class="field-label">Sleep (hours)</label><input type="range" min="3" max="12" step="0.5" value="${log.sleep||7}" class="slider" id="j-sleep" oninput="document.getElementById('j-sv').textContent=this.value+'h'"><div style="text-align:right;font-size:13px;color:var(--accent)" id="j-sv">${log.sleep||7}h</div></div>
+        <div><label class="field-label">Stress (1-10)</label><input type="range" min="1" max="10" value="${log.stress||3}" class="slider" id="j-stress" oninput="document.getElementById('j-stv').textContent=this.value"><div style="text-align:right;font-size:13px;color:var(--accent)" id="j-stv">${log.stress||3}</div></div>
+        <div><label class="field-label">Pain (0-10)</label><input type="range" min="0" max="10" value="${log.pain||0}" class="slider" id="j-pain" oninput="document.getElementById('j-pv').textContent=this.value"><div style="text-align:right;font-size:13px;color:var(--accent)" id="j-pv">${log.pain||0}</div></div>
+      </div>
+    </div>
+    <div class="journal-section">
+      <div class="section-title">Notes</div>
+      <textarea class="form-textarea" id="j-notes" rows="5" placeholder="How was your day? Symptoms, cravings, wins, struggles...">${log.journal||''}</textarea>
+    </div>
+    <button class="pin-btn" onclick="saveJournal()">Save journal</button>
+    <div id="j-saved" style="display:none;text-align:center;color:#4ade80;margin-top:8px;font-size:13px">✓ Saved</div>
+  </div>`;
+}
+
+async function saveJournal() {
+  _journalLog.energy = parseInt(document.getElementById('j-energy').value);
+  _journalLog.sleep = parseFloat(document.getElementById('j-sleep').value);
+  _journalLog.stress = parseInt(document.getElementById('j-stress').value);
+  _journalLog.pain = parseInt(document.getElementById('j-pain').value);
+  _journalLog.journal = document.getElementById('j-notes').value;
+  await saveDayLog(currentUser.id, currentDate, _journalLog);
+  const el = document.getElementById('j-saved'); el.style.display='block';
+  setTimeout(()=>el.style.display='none', 2000);
+}
+
+function setMoodVal(val, el) {
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on'); _journalLog.mood = val;
+}
+
+async function loadDoctorNotesPatient() {
+  const notes = await getDoctorNotes(currentUser.id);
+  document.getElementById('patient-main').innerHTML = `
+  <div>
+    <div class="history-title">Messages from your doctor</div>
+    ${notes.length===0?'<div class="empty-state">No notes from your doctor yet.</div>':''}
+    ${notes.map(n=>`<div class="doctor-note-card"><div class="note-date">${new Date(n.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div><div class="note-text">${n.note}</div></div>`).join('')}
+  </div>`;
+}
+
+function showPatientProfile() {
+  const p = currentUser.profile;
+  document.getElementById('patient-main').innerHTML = `
+  <div>
+    <div class="profile-header">
+      <div class="profile-avatar">${p.name?.[0]||'?'}</div>
+      <div><div class="profile-name">${p.name}</div><div class="profile-meta">${p.age||'?'} yrs · ${p.gender||''}</div><div class="profile-id">ID: ${currentUser.id}</div></div>
+    </div>
+    <div class="profile-grid">
+      ${pField('Height',p.height?p.height+'cm':'-')}${pField('Weight',p.weight?p.weight+'kg':'-')}
+      ${pField('Diet style',p.dietStyle||'-')}${pField('Health goal',p.goal||'-')}
+      ${pField('Conditions',p.conditions||'None')}${pField('Allergies',p.allergies||'None')}
+    </div>
+    <div style="margin:16px 0 8px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Doctor targets</div>
+    <div class="profile-grid">
+      ${pField('Daily protein',p.targets?.protein+'g')}${pField('Daily calories',p.targets?.calories+' kcal')}
+    </div>
+    <button class="pin-btn-outline" style="margin-top:16px" onclick="patientNav('today',document.getElementById('nav-today'))">← Back to today</button>
+  </div>`;
+}
+function pField(l,v){return `<div class="profile-field"><div class="field-label">${l}</div><div class="profile-val">${v}</div></div>`;}
+
+// ── DOCTOR APP ────────────────────────────────────────────────
+async function showDoctorApp() {
+  document.getElementById('app').innerHTML = `
+  <div class="doctor-shell">
+    <div class="doctor-header">
+      <div class="header-logo">❤️ HealthTrack</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="doctor-badge">Doctor Dashboard</div>
+        <button class="icon-btn" onclick="logout()">⎋</button>
+      </div>
+    </div>
+    <div class="doctor-tabs">
+      <button class="d-tab on" onclick="doctorTab('patients',this)">👥 All patients</button>
+      <button class="d-tab" onclick="doctorTab('alerts',this)">🔔 Alerts</button>
+    </div>
+    <div id="doctor-main" class="doctor-main"><div class="loading-state">Loading patients...</div></div>
+  </div>`;
+  hideLoading();
+  await loadAllPatients();
+}
+
+async function doctorTab(tab, el) {
+  document.querySelectorAll('.d-tab').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('doctor-main').innerHTML='<div class="loading-state">Loading...</div>';
+  if (tab==='patients') await loadAllPatients();
+  if (tab==='alerts') await loadAlerts();
+}
+
+async function loadAllPatients() {
+  const patients = await getAllPatients();
+  let html = `<div>
+    <div class="patients-header">
+      <div class="patients-count">${patients.length} patients</div>
+      <div style="display:flex;gap:8px">
+        <select class="form-select" id="range-sel" onchange="loadAllPatients()" style="width:auto;padding:6px 10px">
+          <option value="7">Last 7 days</option><option value="30">Last 30 days</option>
+        </select>
+        <button class="add-patient-btn" onclick="showCreatePatient()">+ Add patient</button>
+      </div>
+    </div>
+    <div class="patients-grid">`;
+
+  for (const patient of patients) {
+    const days = parseInt(document.getElementById('range-sel')?.value||'7');
+    const logs = await getPatientLogs(patient.id, days);
+    const loggedDays = Object.values(logs).filter(l=>l.meals?.length||l.activity||l.journal).length;
+    const avgProtein = loggedDays ? Math.round(Object.values(logs).reduce((s,l)=>s+recalcTotals(l.meals||[]).protein,0)/loggedDays) : 0;
+    const lastLog = Object.entries(logs).filter(([,l])=>l.meals?.length||l.activity).sort((a,b)=>b[0].localeCompare(a[0]))[0];
+    const lastActive = lastLog ? formatDate(lastLog[0]) : 'Never';
+    const loggedToday = !!(logs[currentDate]?.meals?.length||logs[currentDate]?.activity);
+    html += `<div class="patient-card" onclick="viewPatient('${patient.id}')">
+      <div class="patient-card-header">
+        <div class="patient-avatar">${patient.name?.[0]||'?'}</div>
+        <div style="flex:1"><div class="patient-card-name">${patient.name}</div><div class="patient-card-meta">${patient.age||'?'} yrs · ${patient.gender||''} · ${patient.id}</div></div>
+        ${loggedToday?'<div class="ok-dot">✓</div>':'<div class="alert-dot">!</div>'}
+      </div>
+      <div class="patient-card-stats">
+        <div class="pstat"><div class="pstat-val">${loggedDays}/${days}</div><div class="pstat-label">days logged</div></div>
+        <div class="pstat"><div class="pstat-val" style="color:#4ade80">${avgProtein}g</div><div class="pstat-label">avg protein</div></div>
+        <div class="pstat"><div class="pstat-val">${lastActive}</div><div class="pstat-label">last active</div></div>
+      </div>
+      <div class="patient-card-tags">
+        ${patient.goal?`<span class="ptag">${patient.goal}</span>`:''}
+        ${patient.conditions?`<span class="ptag ptag-warn">⚕ ${patient.conditions}</span>`:''}
+      </div>
+    </div>`;
+  }
+  html += `</div></div>`;
+  document.getElementById('doctor-main').innerHTML = html;
+}
+
+async function viewPatient(pid) {
+  showLoading('Loading patient...');
+  const patient = await getPatient(pid);
+  const logs = await getPatientLogs(pid, 30);
+  const notes = await getDoctorNotes(pid);
+  hideLoading();
+  const loggedDates = Object.keys(logs).filter(d=>logs[d].meals?.length||logs[d].activity||logs[d].journal).sort((a,b)=>b.localeCompare(a));
+  const avg = {protein:0,carbs:0,fat:0,calories:0,fibre:0,energy:0,sleep:0,water:0};
+  loggedDates.forEach(d=>{
+    const t=recalcTotals(logs[d].meals||[]);
+    avg.protein+=t.protein; avg.carbs+=t.carbs; avg.fat+=t.fat; avg.calories+=t.calories; avg.fibre+=t.fibre;
+    avg.energy+=logs[d].energy||0; avg.sleep+=logs[d].sleep||0; avg.water+=logs[d].water||0;
+  });
+  const n = loggedDates.length||1;
+  Object.keys(avg).forEach(k=>avg[k]=Math.round(avg[k]/n*10)/10);
+  const actCounts={};
+  loggedDates.forEach(d=>{const t=logs[d].activity?.type;if(t)actCounts[t]=(actCounts[t]||0)+1;});
+  _patientDetailData = {patient,logs,loggedDates,avg};
+
+  document.getElementById('doctor-main').innerHTML = `
+  <div>
+    <button class="back-btn" onclick="loadAllPatients()">← All patients</button>
+    <div class="patient-detail-header">
+      <div class="patient-avatar large">${patient.name?.[0]}</div>
+      <div style="flex:1">
+        <div class="patient-detail-name">${patient.name}</div>
+        <div class="patient-detail-meta">${patient.age||'?'} yrs · ${patient.gender||''} · ${patient.dietStyle||''}</div>
+        <div class="patient-detail-meta">Goal: ${patient.goal||'—'} · ID: ${pid}</div>
+        ${patient.conditions?`<div class="condition-tag">⚕ ${patient.conditions}</div>`:''}
+      </div>
+      <button class="ai-summary-btn" onclick="generateAISummary('${pid}')">🤖 AI Summary</button>
+    </div>
+    <div id="ai-summary-box" style="display:none" class="ai-summary-box">
+      <div class="ai-summary-title">🤖 AI Patient Summary</div>
+      <div id="ai-summary-content" class="ai-summary-content">Generating...</div>
+    </div>
+    <div class="detail-tabs">
+      <button class="detail-tab on" onclick="detailTab('nutrition',this)">Nutrition</button>
+      <button class="detail-tab" onclick="detailTab('activity',this)">Activity</button>
+      <button class="detail-tab" onclick="detailTab('logs',this)">Daily logs</button>
+      <button class="detail-tab" onclick="detailTab('notes',this)">Notes</button>
+      <button class="detail-tab" onclick="detailTab('targets',this)">Targets</button>
+    </div>
+
+    <div id="detail-nutrition">
+      <div class="avg-title">30-day averages (${loggedDates.length} days logged)</div>
+      <div class="avg-grid">
+        ${avgCard('Avg protein',avg.protein+'g',patient.targets?.protein,'g','#4ade80')}
+        ${avgCard('Avg calories',avg.calories+' kcal',patient.targets?.calories,' kcal','#fbbf24')}
+        ${avgCard('Avg carbs',avg.carbs+'g',null,null,'#60a5fa')}
+        ${avgCard('Avg fat',avg.fat+'g',null,null,'#f472b6')}
+        ${avgCard('Avg fibre',avg.fibre+'g',null,null,'#fb923c')}
+        ${avgCard('Avg water',avg.water+'L',null,null,'#67e8f9')}
+        ${avgCard('Avg energy',avg.energy+'/10',null,null,'#a78bfa')}
+        ${avgCard('Avg sleep',avg.sleep+'h',null,null,'#818cf8')}
+      </div>
+    </div>
+
+    <div id="detail-activity" style="display:none">
+      <div class="avg-title">Activity breakdown (30 days)</div>
+      ${Object.entries(actCounts).length===0?'<div class="empty-state">No activity logged</div>':''}
+      ${Object.entries(actCounts).sort((a,b)=>b[1]-a[1]).map(([t,c])=>`
+        <div class="activity-stat-row">
+          <div class="activity-stat-name">${t}</div>
+          <div class="activity-stat-bar-wrap"><div class="activity-stat-bar" style="width:${Math.round(c/loggedDates.length*100)}%"></div></div>
+          <div class="activity-stat-count">${c}d</div>
+        </div>`).join('')}
+    </div>
+
+    <div id="detail-logs" style="display:none">
+      ${loggedDates.slice(0,14).map(date=>{
+        const l=logs[date],t=recalcTotals(l.meals||[]);
+        return `<div class="log-summary-row">
+          <div class="log-summary-date">${formatDate(date)}</div>
+          <div class="log-summary-activity">${l.activity?.type||'—'}</div>
+          <div class="log-summary-macros">P:${t.protein}g C:${t.carbs}g F:${t.fat}g ${t.calories}kcal</div>
+          <div class="log-summary-meals">${l.meals?.length||0} meals</div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div id="detail-notes" style="display:none">
+      <div class="add-note-box">
+        <label class="field-label">Write note for ${patient.name}</label>
+        <textarea class="form-textarea" id="new-note-text" rows="3" placeholder="Recommendations, observations, instructions..."></textarea>
+        <button class="pin-btn" style="margin-top:8px" onclick="addDoctorNote('${pid}')">Send note to patient</button>
+      </div>
+      ${notes.map(note=>`<div class="doctor-note-card"><div class="note-date">${new Date(note.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div><div class="note-text">${note.note}</div></div>`).join('')}
+      ${notes.length===0?'<div class="empty-state">No notes yet</div>':''}
+    </div>
+
+    <div id="detail-targets" style="display:none">
+      <div class="avg-title">Set targets for ${patient.name}</div>
+      <div style="display:flex;flex-direction:column;gap:10px;max-width:300px">
+        <div><label class="field-label">Daily protein (g)</label><input type="number" class="form-input" id="tgt-protein" value="${patient.targets?.protein||100}"></div>
+        <div><label class="field-label">Daily calories (kcal)</label><input type="number" class="form-input" id="tgt-calories" value="${patient.targets?.calories||2000}"></div>
+        <div><label class="field-label">Activity days per week</label><input type="number" class="form-input" id="tgt-activity" value="${patient.targets?.activityDays||4}" min="0" max="7"></div>
+        <button class="pin-btn" onclick="saveTargets('${pid}')">Save targets</button>
+        <div id="targets-saved" style="display:none;color:#4ade80;font-size:13px">✓ Targets saved</div>
+      </div>
+    </div>
+    <div style="height:30px"></div>
+  </div>`;
+}
+
+function detailTab(tab, el) {
+  document.querySelectorAll('.detail-tab').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  ['nutrition','activity','logs','notes','targets'].forEach(t=>{ const el=document.getElementById('detail-'+t); if(el)el.style.display=t===tab?'block':'none'; });
+}
+
+function avgCard(label,val,target,unit,color) {
+  return `<div class="avg-card"><div class="avg-label">${label}</div><div class="avg-val" style="color:${color}">${val}</div>${target?`<div style="font-size:10px;color:var(--muted)">Target: ${target}${unit}</div>`:''}</div>`;
+}
+
+async function generateAISummary(pid) {
+  const box=document.getElementById('ai-summary-box'),content=document.getElementById('ai-summary-content');
+  box.style.display='block'; content.textContent='Generating AI summary...';
+  box.scrollIntoView({behavior:'smooth'});
+  const {patient,logs,loggedDates,avg}=_patientDetailData;
+  const recentStr=loggedDates.slice(0,7).map(d=>{
+    const l=logs[d],t=recalcTotals(l.meals||[]);
+    const mealNames=(l.meals||[]).map(m=>m.name).join(', ');
+    return `${formatDate(d)}: activity=${l.activity?.type||'none'} protein=${t.protein}g cal=${t.calories} energy=${l.energy||'?'}/10 sleep=${l.sleep||'?'}h mood=${l.mood!==undefined?['Bad','Low','Okay','Good','Great'][l.mood]:'?'} meals=[${mealNames}] journal="${(l.journal||'').substring(0,80)}"`;
+  }).join('\n');
+  const prompt=`You are a healthcare professional reviewing a patient's health data.\n\nPatient: ${patient.name}, ${patient.age||'?'} years, ${patient.gender||''}\nDiet: ${patient.dietStyle||'?'} | Goal: ${patient.goal||'?'}\nConditions: ${patient.conditions||'None'} | Allergies: ${patient.allergies||'None'}\nDoctor targets: Protein ${patient.targets?.protein||100}g/day, Calories ${patient.targets?.calories||2000}/day\n\n30-day averages (${loggedDates.length} days logged):\nProtein: ${avg.protein}g | Calories: ${avg.calories} | Carbs: ${avg.carbs}g | Fat: ${avg.fat}g | Fibre: ${avg.fibre}g | Water: ${avg.water}L | Energy: ${avg.energy}/10 | Sleep: ${avg.sleep}h\n\nRecent 7 days:\n${recentStr}\n\nProvide a concise clinical summary:\nOVERALL STATUS: (Good/Needs attention/Concerning)\nNUTRITION: Key findings\nACTIVITY: Assessment\nCONCERNS: Specific issues\nRECOMMENDATIONS: 3 specific actionable steps\n\nUnder 250 words. Professional and specific.`;
+  const result=await callGemini(prompt);
+  content.style.whiteSpace='pre-wrap'; content.textContent=result;
+}
+
+async function addDoctorNote(pid) {
+  const note=(document.getElementById('new-note-text').value||'').trim();
+  if (!note) return;
+  await saveDoctorNote(pid, note);
+  document.getElementById('new-note-text').value='';
+  alert('Note sent to patient!');
+  await viewPatient(pid);
+  detailTab('notes', document.querySelectorAll('.detail-tab')[3]);
+}
+
+async function saveTargets(pid) {
+  const targets={
+    protein:parseInt(document.getElementById('tgt-protein').value)||100,
+    calories:parseInt(document.getElementById('tgt-calories').value)||2000,
+    activityDays:parseInt(document.getElementById('tgt-activity').value)||4
+  };
+  await savePatient(pid,{targets});
+  _patientDetailData.patient.targets=targets;
+  document.getElementById('targets-saved').style.display='block';
+}
+
+async function loadAlerts() {
+  const patients=await getAllPatients();
+  const alerts=[];
+  for(const p of patients){
+    const logs=await getPatientLogs(p.id,7);
+    const loggedToday=!!(logs[currentDate]?.meals?.length||logs[currentDate]?.activity);
+    const daysNotLogged=Object.values(logs).filter(l=>!l.meals?.length&&!l.activity&&!l.journal).length;
+    const avgP=Object.values(logs).reduce((s,l)=>s+recalcTotals(l.meals||[]).protein,0)/7;
+    const sedentary=Object.values(logs).filter(l=>l.activity?.type==='Sedentary / desk day').length;
+    if(!loggedToday) alerts.push({pid:p.id,name:p.name,type:'not-logged',msg:'Has not logged today'});
+    if(daysNotLogged>=3) alerts.push({pid:p.id,name:p.name,type:'inactive',msg:`${daysNotLogged}/7 days without logging`});
+    if(avgP<(p.targets?.protein||100)*0.7) alerts.push({pid:p.id,name:p.name,type:'nutrition',msg:`Avg protein ${Math.round(avgP)}g/day — below target`});
+    if(sedentary>=4) alerts.push({pid:p.id,name:p.name,type:'sedentary',msg:`${sedentary} sedentary days this week`});
+  }
+  document.getElementById('doctor-main').innerHTML=`
+  <div>
+    <div class="patients-header"><div class="patients-count">${alerts.length} alerts</div></div>
+    ${alerts.length===0?'<div class="empty-state" style="margin-top:40px">✓ All patients on track. No alerts.</div>':''}
+    ${alerts.map(a=>`<div class="alert-row" onclick="viewPatient('${a.pid}')">
+      <div class="alert-icon ${a.type==='not-logged'?'alert-red':a.type==='nutrition'?'alert-amber':'alert-orange'}">${a.type==='not-logged'?'📵':a.type==='inactive'?'💤':a.type==='nutrition'?'🥗':'🪑'}</div>
+      <div><div class="alert-patient">${a.name} <span style="color:var(--muted);font-size:11px">${a.pid}</span></div><div class="alert-msg">${a.msg}</div></div>
+    </div>`).join('')}
+  </div>`;
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+showPinScreen();
+</script>
+</body>
+</html>
