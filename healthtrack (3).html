@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>HealthTrack</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+:root{--bg:#0d0d0f;--surface:#13131a;--card:#1a1a24;--border:#252535;--accent:#6ee7b7;--danger:#f87171;--warn:#fbbf24;--text:#f0f0f0;--muted:#6b7280;--faint:#1e1e2a;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;}
+#app{min-height:100vh;}
+.fl{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.fi{width:100%;background:var(--faint);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans';font-size:13px;padding:9px 12px;outline:none;}
+.fi:focus{border-color:var(--accent);}
+.fs{width:100%;background:var(--faint);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans';font-size:13px;padding:9px 12px;outline:none;cursor:pointer;}
+.ft{width:100%;background:var(--faint);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans';font-size:13px;padding:9px 12px;outline:none;resize:vertical;line-height:1.5;}
+.ft:focus{border-color:var(--accent);}
+.bp{width:100%;padding:13px;background:var(--accent);color:#000;border:none;border-radius:10px;font-family:'Syne';font-size:15px;font-weight:700;cursor:pointer;}
+.bo{width:100%;padding:12px;background:none;color:var(--text);border:1px solid var(--border);border-radius:10px;font-family:'DM Sans';font-size:14px;cursor:pointer;margin-top:10px;}
+.bsm{padding:7px 14px;background:var(--accent);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.errbox{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:var(--danger);border-radius:8px;padding:8px 12px;font-size:12px;margin-top:10px;}
+.okbox{background:rgba(110,231,183,.1);border:1px solid rgba(110,231,183,.3);color:var(--accent);border-radius:8px;padding:8px 12px;font-size:12px;margin-top:8px;text-align:center;}
+.loader{position:fixed;inset:0;background:rgba(13,13,15,.92);display:flex;align-items:center;justify-content:center;z-index:999;color:var(--accent);font-size:14px;}
+/* PIN */
+.pscr{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at top,#1a1a2e,var(--bg) 60%);}
+.pcard{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:400px;}
+.ptabs{display:flex;gap:5px;background:var(--faint);border-radius:12px;padding:4px;margin-bottom:20px;}
+.ptab{flex:1;padding:9px;border:none;background:none;color:var(--muted);font-family:'DM Sans';font-size:13px;font-weight:500;cursor:pointer;border-radius:9px;transition:all .2s;}
+.ptab.on{background:var(--accent);color:#000;}
+.pinp{width:100%;background:var(--faint);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Mono';font-size:18px;padding:12px 14px;outline:none;margin-bottom:12px;letter-spacing:.05em;}
+.pinp:focus{border-color:var(--accent);}
+.divider{text-align:center;color:var(--muted);font-size:12px;margin:12px 0;}
+/* SHELL */
+.shell{display:flex;flex-direction:column;min-height:100vh;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.tl{font-family:'Syne';font-size:15px;font-weight:700;color:var(--accent);}
+.tsub{font-size:11px;color:var(--muted);margin-top:1px;}
+.ibtn{background:var(--faint);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;padding:6px 10px;cursor:pointer;}
+.bnav{display:flex;border-top:1px solid var(--border);background:var(--surface);position:sticky;bottom:0;z-index:50;}
+.bni{flex:1;display:flex;flex-direction:column;align-items:center;padding:9px 4px 7px;cursor:pointer;color:var(--muted);font-size:10px;gap:3px;border-top:2px solid transparent;}
+.bni.on{color:var(--accent);border-top-color:var(--accent);}
+.bni-ic{font-size:19px;}
+.pgc{flex:1;padding:14px 16px;max-width:600px;margin:0 auto;width:100%;padding-bottom:80px;}
+/* DATE NAV */
+.dnav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:16px;}
+.dnavbtn{width:38px;height:38px;background:var(--faint);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+.dnavbtn:disabled{opacity:.2;cursor:not-allowed;}
+.dnavlbl{font-family:'Syne';font-size:17px;font-weight:700;min-width:110px;text-align:center;}
+/* NUTRITION */
+.nutcard{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;}
+.nuttitle{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px;}
+.rings{display:flex;justify-content:space-around;margin-bottom:14px;}
+.ringw{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.ringsvg{position:relative;width:72px;height:72px;}
+.ringsvg svg{position:absolute;top:0;left:0;}
+.ringctr{width:72px;height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;z-index:1;}
+.rval{font-family:'DM Mono';font-size:14px;font-weight:600;line-height:1;}
+.runit{font-size:9px;color:var(--muted);}
+.rlbl{font-size:11px;color:var(--muted);}
+.calrow{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;}
+.caltrack{height:6px;background:var(--faint);border-radius:3px;overflow:hidden;}
+.calfill{height:100%;background:linear-gradient(to right,#6ee7b7,#34d399);border-radius:3px;transition:width .4s;}
+/* SECTION */
+.sc{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;}
+.shdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.stitle{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+/* MEAL */
+.mitem{background:var(--faint);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;}
+.mitem:last-child{margin-bottom:0;}
+.mhdr{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;}
+.mname{font-size:14px;font-weight:600;}
+.mmeta{font-size:11px;color:var(--muted);margin-top:2px;}
+.mdesc{font-size:12px;color:var(--muted);margin-bottom:7px;font-style:italic;line-height:1.5;}
+.mphoto{width:100%;border-radius:8px;max-height:180px;object-fit:cover;margin-bottom:8px;display:block;}
+.mmacros{display:flex;gap:8px;flex-wrap:wrap;}
+.mmac{font-size:11px;font-family:'DM Mono';}
+.delbtn{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.2);color:var(--danger);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;flex-shrink:0;}
+.ainote{font-size:10px;color:var(--muted);margin-top:5px;}
+/* WATER */
+.wgrid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.wbtn{padding:6px 11px;background:var(--faint);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;}
+.wbtn.on{background:rgba(103,232,249,.15);border-color:#67e8f9;color:#67e8f9;}
+/* MODAL */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:flex-end;z-index:200;}
+.mbox{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px 18px;width:100%;max-height:93vh;overflow-y:auto;}
+.mhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.mtitle{font-family:'Syne';font-size:17px;font-weight:700;}
+.xbtn{background:var(--faint);border:1px solid var(--border);color:var(--text);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.mtgrid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+.mtbtn{padding:5px 12px;border:1px solid var(--border);border-radius:20px;background:none;color:var(--muted);font-size:12px;cursor:pointer;}
+.mtbtn.on{border-color:var(--accent);color:var(--accent);background:rgba(110,231,183,.08);}
+.methrow{display:flex;gap:5px;margin-bottom:14px;}
+.methbtn{flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:none;color:var(--muted);font-size:13px;cursor:pointer;text-align:center;}
+.methbtn.on{border-color:var(--accent);color:var(--accent);background:rgba(110,231,183,.08);}
+.pzone{border:2px dashed var(--border);border-radius:12px;padding:28px 20px;text-align:center;cursor:pointer;margin-bottom:10px;}
+.pzone:hover{border-color:var(--accent);}
+.abtn{width:100%;padding:11px;background:rgba(129,140,248,.15);border:1px solid rgba(129,140,248,.3);color:#818cf8;border-radius:10px;font-family:'DM Sans';font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;}
+.abtn:disabled{opacity:.5;cursor:not-allowed;}
+.rwrap{background:var(--faint);border-radius:10px;padding:12px;margin-top:12px;}
+.rtitle{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.rrow{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.rrow:last-child{border-bottom:none;}
+.rtots{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.rtot{font-size:12px;font-family:'DM Mono';}
+/* JOURNAL */
+.moodrow{display:flex;gap:5px;margin-bottom:4px;}
+.moodbtn{flex:1;padding:8px 3px;border:1px solid var(--border);border-radius:10px;background:none;color:var(--muted);font-size:11px;cursor:pointer;text-align:center;line-height:1.4;}
+.moodbtn.on{border-color:var(--accent);background:rgba(110,231,183,.08);color:var(--accent);}
+.slwrap{margin-bottom:12px;}
+.slhdr{display:flex;justify-content:space-between;margin-bottom:4px;}
+.sllbl{font-size:12px;color:var(--muted);}
+.slval{font-size:12px;font-family:'DM Mono';color:var(--accent);}
+input[type=range]{width:100%;accent-color:var(--accent);}
+/* HISTORY */
+.hrow{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;}
+.hrow:hover{border-color:var(--accent);}
+/* PROFILE */
+.pavatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6ee7b7,#818cf8);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#000;flex-shrink:0;}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.pf{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+/* DOCTOR */
+.dochdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.pgrd{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.pcard{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;cursor:pointer;transition:border .2s;}
+.pcard:hover{border-color:var(--accent);}
+.pcavatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6ee7b7,#818cf8);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#000;flex-shrink:0;}
+.pcavatar.lg{width:52px;height:52px;font-size:20px;}
+.sdot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.pstats{display:flex;gap:6px;margin-bottom:10px;}
+.pst{flex:1;background:var(--faint);border-radius:8px;padding:7px;text-align:center;}
+.pstv{font-family:'DM Mono';font-size:13px;font-weight:600;}
+.pstl{font-size:10px;color:var(--muted);margin-top:1px;}
+.ptag{font-size:10px;padding:2px 8px;border-radius:6px;background:var(--faint);color:var(--muted);}
+.backbtn{background:none;border:none;color:var(--muted);font-family:'DM Sans';font-size:14px;cursor:pointer;padding:0 0 14px;display:flex;align-items:center;gap:4px;}
+.dtabs{display:flex;gap:5px;margin-bottom:16px;flex-wrap:wrap;}
+.dtab{padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:none;color:var(--muted);font-size:12px;cursor:pointer;}
+.dtab.on{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600;}
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:14px;}
+.acard{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px;text-align:center;}
+.aibox{background:var(--card);border:1px solid rgba(129,140,248,.3);border-radius:14px;padding:16px;margin-bottom:14px;}
+.alertrow{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px;display:flex;align-items:center;gap:12px;margin-bottom:8px;cursor:pointer;}
+.aicon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.notecard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;}
+.empty{text-align:center;color:var(--muted);padding:24px;font-size:13px;}
+@media(max-width:600px){.pgrd{grid-template-columns:1fr;}.agrid{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ── FIREBASE ──────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey:"AIzaSyBMn15Oqgp0vGCvmMF9q4_835Cz_ZNY9qM",
+  authDomain:"healthtracker-5eee5.firebaseapp.com",
+  projectId:"healthtracker-5eee5",
+  storageBucket:"healthtracker-5eee5.firebasestorage.app",
+  messagingSenderId:"723390840680",
+  appId:"1:723390840680:web:866a0eb6ab042b8ba2e0dd"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const GEMINI = "AIzaSyCchzyOkA4QkAkB9r04g-VZgtTDJIcq9t0";
+const DOCPIN = "1234";
+
+// ── STATE ─────────────────────────────────────────────────────
+let CU=null, _log={}, _jlog={}, _meal={}, _vd='';
+
+// ── DATE (IST) ────────────────────────────────────────────────
+function istDate() {
+  const now = new Date();
+  // Get UTC ms + 5h30m
+  const istMs = now.getTime() + (330 * 60 * 1000);
+  const istDate = new Date(istMs);
+  const y = istDate.getUTCFullYear();
+  const m = String(istDate.getUTCMonth()+1).padStart(2,'0');
+  const d = String(istDate.getUTCDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+
+function shiftDate(ds, n) {
+  // Pure arithmetic, no timezone
+  const [y,m,d] = ds.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  dt.setDate(dt.getDate() + n);
+  return [
+    dt.getFullYear(),
+    String(dt.getMonth()+1).padStart(2,'0'),
+    String(dt.getDate()).padStart(2,'0')
+  ].join('-');
+}
+
+function fmtDate(ds) {
+  const today = istDate();
+  if (ds === today) return 'Today';
+  if (ds === shiftDate(today,-1)) return 'Yesterday';
+  const [y,m,d] = ds.split('-').map(Number);
+  const dt = new Date(y,m-1,d);
+  return dt.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+}
+
+function nowTime() {
+  const now = new Date();
+  const ist = new Date(now.getTime() + 330*60*1000);
+  return ist.toISOString().substr(11,5).replace(':',':'); // HH:MM
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function showL(msg){let e=document.getElementById('_gl');if(!e){e=document.createElement('div');e.id='_gl';e.className='loader';document.body.appendChild(e);}e.textContent=msg||'Loading...';e.style.display='flex';}
+function hideL(){const e=document.getElementById('_gl');if(e)e.remove();}
+function closeModal(){const e=document.getElementById('_modal');if(e)e.remove();}
+function logout(){CU=null;showPin();}
+
+function recalc(meals){
+  const t={p:0,c:0,f:0,cal:0,fi:0};
+  (meals||[]).forEach(m=>{if(m.n){t.p+=m.n.p||0;t.c+=m.n.c||0;t.f+=m.n.f||0;t.cal+=m.n.cal||0;t.fi+=m.n.fi||0;}});
+  return {p:Math.round(t.p),c:Math.round(t.c),f:Math.round(t.f),cal:Math.round(t.cal),fi:Math.round(t.fi)};
+}
+
+function ring(val,max,color,label){
+  const pct=Math.min(100,val/max*100);
+  const r=28,circ=2*Math.PI*r,dash=circ*pct/100;
+  return `<div class="ringw">
+    <div class="ringsvg">
+      <svg width="72" height="72" viewBox="0 0 72 72">
+        <circle cx="36" cy="36" r="${r}" fill="none" stroke="#1e1e2a" stroke-width="6"/>
+        <circle cx="36" cy="36" r="${r}" fill="none" stroke="${color}" stroke-width="6"
+          stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${circ/4}" stroke-linecap="round"/>
+      </svg>
+      <div class="ringctr"><div class="rval" style="color:${color}">${val}</div><div class="runit">g</div></div>
+    </div>
+    <div class="rlbl">${label}</div>
+  </div>`;
+}
+
+// ── FIREBASE ──────────────────────────────────────────────────
+async function getP(pid){const d=await db.collection('patients').doc(pid).get();return d.exists?{id:pid,...d.data()}:null;}
+async function saveP(pid,data){await db.collection('patients').doc(pid).set(data,{merge:true});}
+async function getLog(pid,date){const d=await db.collection('patients').doc(pid).collection('logs').doc(date).get();return d.exists?d.data():{meals:[],activity:null,water:0};}
+async function saveLog(pid,date,data){await db.collection('patients').doc(pid).collection('logs').doc(date).set({...data,updatedAt:new Date().toISOString()},{merge:true});}
+async function allPatients(){const s=await db.collection('patients').get();return s.docs.map(d=>({id:d.id,...d.data()}));}
+async function patientLogs(pid,days){
+  const today=istDate(),logs={};
+  const dates=[];for(let i=0;i<days;i++)dates.push(shiftDate(today,-i));
+  await Promise.all(dates.map(async date=>{logs[date]=await getLog(pid,date);}));
+  return logs;
+}
+async function addNote(pid,note){await db.collection('patients').doc(pid).collection('doctorNotes').add({note,date:new Date().toISOString()});}
+async function getNotes(pid){const s=await db.collection('patients').doc(pid).collection('doctorNotes').orderBy('date','desc').get();return s.docs.map(d=>d.data());}
+
+// ── GEMINI ────────────────────────────────────────────────────
+async function callGemini(prompt){
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI}`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:800,temperature:0.3}})
+  });
+  const d=await r.json();
+  return d.candidates?.[0]?.content?.parts?.[0]?.text||'';
+}
+
+async function callGeminiVision(b64,mime){
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI}`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[
+      {inline_data:{mime_type:mime,data:b64}},
+      {text:'Identify every food item in this image with estimated portion sizes. Return ONLY valid JSON:\n{"items":[{"name":"food name","portion":"e.g. 1 bowl 200ml","p":9,"c":20,"f":3,"cal":143,"fi":4}],"totals":{"p":0,"c":0,"f":0,"cal":0,"fi":0,"conf":"low|medium|high"},"desc":"one line description"}'}
+    ]}],generationConfig:{maxOutputTokens:600,temperature:0.2}})
+  });
+  const d=await r.json();
+  try{return JSON.parse((d.candidates?.[0]?.content?.parts?.[0]?.text||'{}').replace(/```json|```/g,'').trim());}
+  catch(e){return null;}
+}
+
+async function analyseText(text){
+  const prompt=`You are an expert nutritionist specialising in Indian and international foods.
+Analyse this meal and return accurate nutritional values.
+
+INDIAN FOOD REFERENCE VALUES (use as baseline):
+Poha 1 plate(150g): p=4,c=32,f=4,cal=177,fi=2
+Upma 1 plate(150g): p=4,c=28,f=5,cal=172,fi=2
+Idli 1pc(50g): p=2,c=12,f=0.4,cal=58,fi=0.5
+Dosa 1pc: p=3,c=25,f=2,cal=130,fi=1
+Chapati/roti 1pc: p=3,c=18,f=1,cal=93,fi=2
+Rice 1bowl(150g cooked): p=4,c=45,f=0.5,cal=200,fi=0.5
+Dal tadka 1bowl(200ml): p=9,c=20,f=3,cal=143,fi=4
+Rajma 1bowl(200ml): p=10,c=25,f=2,cal=158,fi=7
+Chole 1bowl(200ml): p=10,c=22,f=4,cal=162,fi=6
+Paneer 100g: p=18,c=4,f=20,cal=265,fi=0
+Paneer bhurji 1serving(150g): p=16,c=8,f=18,cal=258,fi=1
+Chicken curry 1serving(150g): p=25,c=6,f=10,cal=214,fi=1
+Egg boiled 1pc: p=6,c=0.5,f=5,cal=77,fi=0
+Egg omelette 2egg: p=12,c=1,f=10,cal=143,fi=0
+Dahi/curd 1bowl(150g): p=5,c=6,f=4,cal=76,fi=0
+Milk 1glass(250ml): p=8,c=12,f=8,cal=149,fi=0
+Banana shake 1glass(300ml with 1banana+milk): p=8,c=38,f=5,cal=225,fi=2
+Banana 1pc: p=1,c=27,f=0,cal=105,fi=3
+Mango 1medium: p=1,c=28,f=0,cal=107,fi=3
+Dal chawal 1plate(dal+rice): p=13,c=65,f=3.5,cal=343,fi=4.5
+Paratha 1pc(plain): p=4,c=28,f=8,cal=200,fi=2
+Aloo paratha 1pc: p=4,c=35,f=9,cal=232,fi=3
+Samosa 1pc: p=3,c=22,f=10,cal=190,fi=2
+Vada pav 1pc: p=5,c=40,f=12,cal=286,fi=3
+Sandwich veg 1pc: p=6,c=30,f=8,cal=214,fi=3
+Salad bowl(mixed veg): p=2,c=8,f=1,cal=48,fi=3
+
+Meal: "${text}"
+
+Return ONLY valid JSON:
+{"items":[{"name":"item name","portion":"portion size","p":0,"c":0,"f":0,"cal":0,"fi":0}],"totals":{"p":0,"c":0,"f":0,"cal":0,"fi":0,"conf":"low|medium|high"}}`;
+  const resp=await callGemini(prompt);
+  // Try direct parse first
+  try{return JSON.parse(resp.replace(/```json|```/g,'').trim());}
+  catch(e){
+    // Extract JSON from response
+    const match=resp.match(/\{[\s\S]*\}/);
+    if(match){try{return JSON.parse(match[0]);}catch(e2){}}
+    return null;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// PIN SCREEN
+// ══════════════════════════════════════════════════════════════
+function showPin(){
+  document.getElementById('app').innerHTML=`
+  <div class="pscr">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:48px;margin-bottom:8px">❤️</div>
+      <div style="font-family:'Syne';font-size:30px;font-weight:800;color:var(--accent)">HealthTrack</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">Patient &amp; Doctor Portal</div>
+    </div>
+    <div class="pcard">
+      <div class="ptabs">
+        <button class="ptab on" id="t-patient" onclick="switchTab('patient')">Patient</button>
+        <button class="ptab" id="t-doctor" onclick="switchTab('doctor')">Doctor</button>
+      </div>
+      <div id="fp">
+        <label class="fl">Patient ID</label>
+        <input class="pinp" id="f-pid" placeholder="e.g. P001" autocomplete="off" style="text-transform:uppercase;margin-bottom:10px" onkeydown="if(event.key==='Enter')document.getElementById('f-pp').focus()">
+        <label class="fl">Password</label>
+        <input class="pinp" id="f-pp" type="password" placeholder="Your password" onkeydown="if(event.key==='Enter')doLoginP()">
+        <button class="bp" onclick="doLoginP()">Enter Portal →</button>
+        <div class="divider">— or —</div>
+        <button class="bo" onclick="showCreateP()">+ Create new patient profile</button>
+      </div>
+      <div id="fd" style="display:none">
+        <label class="fl">Doctor PIN</label>
+        <input class="pinp" id="f-dp" type="password" placeholder="Enter PIN" onkeydown="if(event.key==='Enter')doLoginD()">
+        <button class="bp" onclick="doLoginD()">Open Dashboard →</button>
+      </div>
+      <div id="perr" style="display:none" class="errbox"></div>
+    </div>
+  </div>`;
+}
+
+function switchTab(t){
+  document.getElementById('t-patient').classList.toggle('on',t==='patient');
+  document.getElementById('t-doctor').classList.toggle('on',t==='doctor');
+  document.getElementById('fp').style.display=t==='patient'?'block':'none';
+  document.getElementById('fd').style.display=t==='doctor'?'block':'none';
+  document.getElementById('perr').style.display='none';
+}
+
+function perr(msg){const e=document.getElementById('perr');if(e){e.textContent=msg;e.style.display='block';}}
+
+async function doLoginP(){
+  const id=(document.getElementById('f-pid').value||'').trim().toUpperCase();
+  const pass=(document.getElementById('f-pp').value||'').trim();
+  if(!id){perr('Enter your Patient ID');return;}
+  if(!pass){perr('Enter your password');return;}
+  showL('Verifying...');
+  try{
+    const p=await getP(id);
+    hideL();
+    if(!p){perr('Patient ID not found. Create a new profile below.');return;}
+    const hash=btoa(id+':'+pass+':ht2026');
+    if(p.passHash&&p.passHash!==hash){perr('Incorrect password. Try again.');return;}
+    if(!p.passHash){await saveP(id,{passHash:hash});}
+    CU={type:'patient',id,profile:p};
+    _vd=istDate();
+    showPatApp();
+  }catch(e){hideL();perr('Error: '+e.message);}
+}
+
+async function doLoginD(){
+  const pin=(document.getElementById('f-dp').value||'').trim();
+  if(pin!==DOCPIN){perr('Incorrect PIN');return;}
+  showL('Loading dashboard...');
+  CU={type:'doctor'};
+  await showDocApp();
+}
+
+// ══════════════════════════════════════════════════════════════
+// CREATE PATIENT
+// ══════════════════════════════════════════════════════════════
+function showCreateP(){
+  document.getElementById('app').innerHTML=`
+  <div class="pscr">
+    <div style="font-size:48px;margin-bottom:8px;text-align:center">❤️</div>
+    <div class="pcard" style="max-width:480px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px">
+        <button onclick="showPin()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0;line-height:1">←</button>
+        <div style="font-size:16px;font-weight:600">New Patient Profile</div>
+      </div>
+      <div style="background:rgba(110,231,183,.07);border:1px solid rgba(110,231,183,.2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--accent);margin-bottom:14px">
+        Your Patient ID is shared with your doctor. Your password is private — only you know it.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div><label class="fl">Patient ID <span style="color:var(--muted);font-size:10px">(share with doctor)</span></label><input class="fi" id="np-id" placeholder="P001" style="text-transform:uppercase"></div>
+        <div><label class="fl">Password <span style="color:var(--muted);font-size:10px">(keep private, min 4 chars)</span></label><input class="fi" id="np-pass" type="password" placeholder="Create a password"></div>
+        <div><label class="fl">Full name</label><input class="fi" id="np-name" placeholder="Rajesh Kumar"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label class="fl">Age</label><input class="fi" id="np-age" type="number" placeholder="38"></div>
+          <div><label class="fl">Gender</label><select class="fs" id="np-gender"><option>Male</option><option>Female</option><option>Other</option></select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label class="fl">Height (cm)</label><input class="fi" id="np-h" type="number" placeholder="170"></div>
+          <div><label class="fl">Weight (kg)</label><input class="fi" id="np-w" type="number" placeholder="70"></div>
+        </div>
+        <div><label class="fl">Dietary style</label>
+          <select class="fs" id="np-diet"><option>Omnivore</option><option>Vegetarian</option><option>Vegan</option><option>Eggetarian</option><option>Jain vegetarian</option><option>Keto</option><option>Other</option></select></div>
+        <div><label class="fl">Medical conditions (optional)</label><input class="fi" id="np-cond" placeholder="Diabetes, hypertension, PCOD..."></div>
+        <div><label class="fl">Allergies (optional)</label><input class="fi" id="np-allergy" placeholder="Gluten, dairy, nuts..."></div>
+        <div><label class="fl">Health goal</label>
+          <select class="fs" id="np-goal"><option>Weight loss</option><option>Weight gain / muscle building</option><option>Maintain weight</option><option>Manage diabetes</option><option>Manage hypertension</option><option>Improve fitness</option><option>Post-surgery recovery</option><option>General health improvement</option></select></div>
+      </div>
+      <button class="bp" style="margin-top:18px" onclick="doCreateP()">Create Profile →</button>
+      <div id="cerr" style="display:none" class="errbox"></div>
+    </div>
+  </div>`;
+}
+
+async function doCreateP(){
+  const id=(document.getElementById('np-id').value||'').trim().toUpperCase();
+  const pass=(document.getElementById('np-pass').value||'').trim();
+  const name=(document.getElementById('np-name').value||'').trim();
+  const e=document.getElementById('cerr');
+  if(!id||!name){e.textContent='Patient ID and name are required';e.style.display='block';return;}
+  if(!pass||pass.length<4){e.textContent='Password must be at least 4 characters';e.style.display='block';return;}
+  showL('Creating profile...');
+  try{
+    const existing=await getP(id);
+    if(existing){hideL();e.textContent='Patient ID already exists. Choose another.';e.style.display='block';return;}
+    const hash=btoa(id+':'+pass+':ht2026');
+    const profile={
+      name,passHash:hash,
+      age:document.getElementById('np-age').value||'',
+      gender:document.getElementById('np-gender').value,
+      height:document.getElementById('np-h').value||'',
+      weight:document.getElementById('np-w').value||'',
+      dietStyle:document.getElementById('np-diet').value,
+      conditions:document.getElementById('np-cond').value||'',
+      allergies:document.getElementById('np-allergy').value||'',
+      goal:document.getElementById('np-goal').value,
+      createdAt:new Date().toISOString(),
+      targets:{protein:100,calories:2000,activityDays:4}
+    };
+    await saveP(id,profile);
+    CU={type:'patient',id,profile:{id,...profile}};
+    _vd=istDate();
+    hideL();
+    showPatApp();
+  }catch(err){hideL();e.textContent='Error: '+err.message;e.style.display='block';}
+}
+
+// ══════════════════════════════════════════════════════════════
+// PATIENT APP
+// ══════════════════════════════════════════════════════════════
+function showPatApp(){
+  _vd=istDate(); // always reset to today on login
+  document.getElementById('app').innerHTML=`
+  <div class="shell">
+    <div class="topbar">
+      <div><div class="tl">❤️ HealthTrack</div><div class="tsub">${CU.profile.name} · ${CU.id}</div></div>
+      <div style="display:flex;gap:6px">
+        <button class="ibtn" onclick="showProfile()">👤</button>
+        <button class="ibtn" onclick="logout()">⎋</button>
+      </div>
+    </div>
+    <div class="pgc" id="pgc"><div style="text-align:center;color:var(--muted);padding:40px">Loading...</div></div>
+    <div class="bnav">
+      <div class="bni on" id="bn0" onclick="goTab(0)"><div class="bni-ic">📅</div><div>Today</div></div>
+      <div class="bni" id="bn1" onclick="goTab(1)"><div class="bni-ic">📊</div><div>History</div></div>
+      <div class="bni" id="bn2" onclick="goTab(2)"><div class="bni-ic">🧠</div><div>Journal</div></div>
+      <div class="bni" id="bn3" onclick="goTab(3)"><div class="bni-ic">💬</div><div>Dr. Notes</div></div>
+    </div>
+  </div>`;
+  loadToday();
+}
+
+function goTab(n){
+  document.querySelectorAll('.bni').forEach((b,i)=>b.classList.toggle('on',i===n));
+  const pg=document.getElementById('pgc');
+  if(pg)pg.innerHTML='<div style="text-align:center;color:var(--muted);padding:40px">Loading...</div>';
+  if(n===0)loadToday();
+  if(n===1)loadHistory();
+  if(n===2)loadJournal();
+  if(n===3)loadNotes();
+}
+
+// ── TODAY ─────────────────────────────────────────────────────
+async function loadToday(){
+  const log=await getLog(CU.id,_vd);
+  _log=log;
+  renderToday();
+}
+
+function renderToday(){
+  const today=istDate();
+  const isToday=_vd===today;
+  const meals=_log.meals||[];
+  const tot=recalc(meals);
+  const pt=CU.profile.targets?.protein||100;
+  const ct=CU.profile.targets?.calories||2000;
+  const actTypes=[
+    'Strength training','Cardio / Run','Yoga / Flexibility',
+    'Walk (light activity)','Sports','Sedentary / desk day',
+    'Travel day','Rest / recovery','Sick day','Other'
+  ];
+  const pg=document.getElementById('pgc');
+  if(!pg)return;
+  pg.innerHTML=`
+  <div class="dnav">
+    <button class="dnavbtn" onclick="navD(-1)">‹</button>
+    <div class="dnavlbl">${fmtDate(_vd)}</div>
+    <button class="dnavbtn" id="nav-fwd" onclick="navD(1)" ${isToday?'disabled':''}>›</button>
+  </div>
+
+  <div class="nutcard">
+    <div class="nuttitle">Nutrition today</div>
+    <div class="rings">
+      ${ring(tot.p,pt,'#4ade80','Protein')}
+      ${ring(tot.c,300,'#60a5fa','Carbs')}
+      ${ring(tot.f,80,'#f472b6','Fat')}
+      ${ring(tot.fi,30,'#fb923c','Fibre')}
+    </div>
+    <div class="calrow"><span>${tot.cal} kcal</span><span style="color:var(--muted)">Target: ${ct} kcal</span></div>
+    <div class="caltrack"><div class="calfill" style="width:${Math.min(100,Math.round(tot.cal/ct*100))}%"></div></div>
+  </div>
+
+  <div class="sc">
+    <div class="stitle" style="margin-bottom:10px">Activity</div>
+    <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:8px">
+      <select class="fs" id="act-t" onchange="saveAct()">
+        <option value="">Select activity...</option>
+        ${actTypes.map(a=>`<option value="${a}" ${_log.activity?.type===a?'selected':''}>${a}</option>`).join('')}
+      </select>
+      <input class="fi" id="act-d" type="number" placeholder="min" value="${_log.activity?.duration||''}" onchange="saveAct()" style="padding:9px 8px">
+    </div>
+    ${_log.activity?.type?`<div style="font-size:12px;color:var(--accent);background:rgba(110,231,183,.08);padding:6px 10px;border-radius:8px;display:inline-block">✓ ${_log.activity.type}${_log.activity.duration?' · '+_log.activity.duration+' min':''}</div>`:''}
+  </div>
+
+  <div class="sc">
+    <div class="shdr">
+      <div class="stitle">Meals (${meals.length})</div>
+      ${isToday?`<button class="bsm" onclick="openMealModal()">+ Add meal</button>`:'<span style="font-size:11px;color:var(--muted)">Past day</span>'}
+    </div>
+    <div id="meals-list">
+      ${meals.length===0?`<div class="empty">${isToday?'No meals yet — tap + Add meal to log food':'Nothing logged on this day'}</div>`:''}
+      ${meals.map((m,i)=>mealCard(m,i,isToday)).join('')}
+    </div>
+  </div>
+
+  <div class="sc">
+    <div class="stitle" style="margin-bottom:10px">Water intake</div>
+    <div class="wgrid">
+      ${[0.5,1,1.5,2,2.5,3,3.5,4].map(v=>`<button class="wbtn ${(_log.water||0)>=v?'on':''}" onclick="setW(${v})">${v}L</button>`).join('')}
+    </div>
+    <div style="font-size:13px;color:var(--muted)" id="wlbl">${_log.water||0}L logged</div>
+  </div>`;
+}
+
+function mealCard(m,i,isToday){
+  const n=m.n||{};
+  return `<div class="mitem">
+    <div class="mhdr">
+      <div><div class="mname">${m.name||'Meal'}</div><div class="mmeta">${m.time||''} ${m.mealType?'· '+m.mealType:''}</div></div>
+      ${isToday?`<button class="delbtn" onclick="delMeal(${i})">✕</button>`:''}
+    </div>
+    ${m.desc?`<div class="mdesc">${m.desc}</div>`:''}
+    ${m.photoUrl?`<img src="${m.photoUrl}" class="mphoto" alt="meal">`:''}
+    <div class="mmacros">
+      <span class="mmac" style="color:#4ade80">P: ${Math.round(n.p||0)}g</span>
+      <span class="mmac" style="color:#60a5fa">C: ${Math.round(n.c||0)}g</span>
+      <span class="mmac" style="color:#f472b6">F: ${Math.round(n.f||0)}g</span>
+      <span class="mmac" style="color:#fbbf24">${Math.round(n.cal||0)} kcal</span>
+      ${n.fi?`<span class="mmac" style="color:#fb923c">Fi: ${Math.round(n.fi)}g</span>`:''}
+    </div>
+    ${m.aiConf?`<div class="ainote">AI estimate · ${m.aiConf} confidence · ±15%</div>`:''}
+  </div>`;
+}
+
+async function navD(dir){
+  const newDate=shiftDate(_vd,dir);
+  const today=istDate();
+  if(newDate>today)return; // can't go to future
+  _vd=newDate;
+  showL('Loading...');
+  const log=await getLog(CU.id,_vd);
+  _log=log;
+  hideL();
+  renderToday();
+}
+
+async function saveAct(){
+  const type=document.getElementById('act-t').value;
+  const dur=document.getElementById('act-d').value;
+  if(!_log.activity)_log.activity={};
+  _log.activity.type=type;_log.activity.duration=dur;
+  await saveLog(CU.id,_vd,_log);
+}
+
+async function setW(val){
+  _log.water=val;
+  await saveLog(CU.id,_vd,_log);
+  document.getElementById('wlbl').textContent=val+'L logged';
+  document.querySelectorAll('.wbtn').forEach(b=>b.classList.toggle('on',parseFloat(b.textContent)<=val));
+}
+
+async function delMeal(i){
+  if(!confirm('Remove this meal?'))return;
+  _log.meals.splice(i,1);
+  await saveLog(CU.id,_vd,_log);
+  renderToday();
+}
+
+// ── ADD MEAL MODAL ────────────────────────────────────────────
+function openMealModal(){
+  _meal={type:'',method:'text',result:null,b64:null,mime:null,desc:''};
+  const el=document.createElement('div');
+  el.className='mbg';el.id='_modal';
+  el.innerHTML=`
+  <div class="mbox">
+    <div class="mhd">
+      <div class="mtitle">Add meal</div>
+      <button class="xbtn" onclick="closeModal()">✕</button>
+    </div>
+
+    <label class="fl">Meal type (optional)</label>
+    <div class="mtgrid">
+      ${['Breakfast','Lunch','Dinner','Snack','Other'].map(t=>`<button class="mtbtn" onclick="pickMT('${t}',this)">${t}</button>`).join('')}
+    </div>
+
+    <label class="fl" style="margin-bottom:5px">Meal name (optional)</label>
+    <input class="fi" id="m-name" placeholder="e.g. Dal chawal, Banana shake..." style="margin-bottom:14px">
+
+    <label class="fl" style="margin-bottom:6px">How to log?</label>
+    <div class="methrow">
+      <button class="methbtn on" id="mb-txt" onclick="pickMeth('text',this)">📝 Describe food</button>
+      <button class="methbtn" id="mb-img" onclick="pickMeth('photo',this)">📷 Upload photo</button>
+    </div>
+
+    <div id="p-text">
+      <label class="fl" style="margin-bottom:5px">Describe what you ate (be specific about portions)</label>
+      <textarea class="ft" id="m-txt" rows="4" placeholder="Examples:
+• 1 plate poha with peanuts and green chutney
+• Dal chawal — 1 bowl dal + 1 bowl rice
+• Banana shake — 1 banana, 1 glass milk, 1 tsp honey
+• 2 chapati, 1 bowl aloo sabzi, 1 bowl dahi"></textarea>
+      <button class="abtn" id="btn-atxt" onclick="doAnalyseText()">🤖 Analyse nutrition</button>
+    </div>
+
+    <div id="p-photo" style="display:none">
+      <div class="pzone" onclick="document.getElementById('photo-inp').click()">
+        <div id="photo-prev">
+          <div style="font-size:36px;margin-bottom:8px">📷</div>
+          <div style="font-size:14px;font-weight:500">Take photo or choose from gallery</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">AI will identify food items and estimate nutrition</div>
+        </div>
+      </div>
+      <input type="file" id="photo-inp" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this)">
+      <button class="abtn" id="btn-aimg" style="display:none" onclick="doAnalysePhoto()">🤖 Analyse photo</button>
+    </div>
+
+    <div id="nut-result" style="display:none" class="rwrap">
+      <div class="rtitle">AI nutrition estimate</div>
+      <div id="r-items"></div>
+      <div class="rtots" id="r-tots"></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px" id="r-conf"></div>
+    </div>
+
+    <button class="bp" id="btn-save-meal" style="display:none;margin-top:14px" onclick="doSaveMeal()">✓ Save meal</button>
+  </div>`;
+  document.body.appendChild(el);
+}
+
+function pickMT(t,el){document.querySelectorAll('.mtbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');_meal.type=t;}
+
+function pickMeth(m,el){
+  document.querySelectorAll('.methbtn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');_meal.method=m;
+  document.getElementById('p-text').style.display=m==='text'?'block':'none';
+  document.getElementById('p-photo').style.display=m==='photo'?'block':'none';
+}
+
+async function doAnalyseText(){
+  const txt=(document.getElementById('m-txt').value||'').trim();
+  if(!txt){alert('Describe your meal first');return;}
+  const btn=document.getElementById('btn-atxt');
+  btn.textContent='⏳ Analysing...';btn.disabled=true;
+  const r=await analyseText(txt);
+  btn.textContent='🤖 Analyse nutrition';btn.disabled=false;
+  if(!r){alert('Could not analyse. Please be more specific about food items and quantities.');return;}
+  _meal.desc=txt;_meal.result=r;
+  showResult(r);
+}
+
+function handlePhoto(inp){
+  const file=inp.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    _meal.b64=e.target.result.split(',')[1];
+    _meal.mime=file.type;
+    _meal.photoUrl=e.target.result;
+    document.getElementById('photo-prev').innerHTML=`<img src="${e.target.result}" style="width:100%;border-radius:8px;max-height:220px;object-fit:cover">`;
+    document.getElementById('btn-aimg').style.display='block';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function doAnalysePhoto(){
+  if(!_meal.b64){alert('Select a photo first');return;}
+  const btn=document.getElementById('btn-aimg');
+  btn.textContent='⏳ Analysing photo...';btn.disabled=true;
+  const r=await callGeminiVision(_meal.b64,_meal.mime);
+  btn.textContent='🤖 Analyse photo';btn.disabled=false;
+  if(!r){alert('Could not analyse. Try a clearer photo with good lighting.');return;}
+  _meal.result=r;showResult(r);
+}
+
+function showResult(r){
+  document.getElementById('nut-result').style.display='block';
+  const items=r.items||[];
+  document.getElementById('r-items').innerHTML=items.map(it=>
+    `<div class="rrow"><span>${it.name} <span style="color:var(--muted);font-size:11px">${it.portion||''}</span></span><span style="font-family:'DM Mono';font-size:11px;color:var(--muted)">P:${it.p||0}g C:${it.c||0}g ${it.cal||0}kcal</span></div>`
+  ).join('');
+  const t=r.totals||{};
+  document.getElementById('r-tots').innerHTML=`
+    <span class="rtot" style="color:#4ade80">Protein: ${t.p||0}g</span>
+    <span class="rtot" style="color:#60a5fa">Carbs: ${t.c||0}g</span>
+    <span class="rtot" style="color:#f472b6">Fat: ${t.f||0}g</span>
+    <span class="rtot" style="color:#fbbf24">${t.cal||0} kcal</span>
+    ${t.fi?`<span class="rtot" style="color:#fb923c">Fibre: ${t.fi}g</span>`:''}`;
+  document.getElementById('r-conf').textContent=`Confidence: ${t.conf||r.totals?.confidence||'medium'} · Estimates ±15%`;
+  document.getElementById('btn-save-meal').style.display='block';
+}
+
+async function doSaveMeal(){
+  const r=_meal.result||{};
+  const t=r.totals||{};
+  const meal={
+    name:(document.getElementById('m-name').value||'').trim()||(_meal.type||'Meal'),
+    mealType:_meal.type||'',
+    time:nowTime(),
+    desc:_meal.desc||'',
+    n:{p:t.p||0,c:t.c||0,f:t.f||0,cal:t.cal||0,fi:t.fi||0},
+    nutritionItems:r.items||[],
+    aiConf:t.conf||t.confidence||'',
+    photoUrl:_meal.b64?`data:${_meal.mime};base64,${_meal.b64}`:null,
+    addedAt:new Date().toISOString()
+  };
+  if(!_log.meals)_log.meals=[];
+  _log.meals.push(meal);
+  await saveLog(CU.id,_vd,_log);
+  closeModal();
+  renderToday();
+}
+
+// ── HISTORY ───────────────────────────────────────────────────
+async function loadHistory(){
+  const logs=await patientLogs(CU.id,30);
+  const dates=Object.keys(logs).sort((a,b)=>b.localeCompare(a));
+  let html=`<div style="font-family:'Syne';font-size:18px;font-weight:700;margin-bottom:14px">Last 30 days</div>`;
+  let any=false;
+  for(const date of dates){
+    const log=logs[date];
+    if(!log.meals?.length&&!log.activity&&!log.journal)continue;
+    any=true;
+    const t=recalc(log.meals||[]);
+    html+=`<div class="hrow" onclick="jumpToDay('${date}')">
+      <div>
+        <div style="font-size:14px;font-weight:600">${fmtDate(date)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${log.activity?.type||'No activity logged'}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="display:flex;gap:8px;justify-content:flex-end;font-size:11px;font-family:'DM Mono'">
+          <span style="color:#4ade80">P:${t.p}g</span><span style="color:#fbbf24">${t.cal}kcal</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${log.meals?.length||0} meals · ${log.water||0}L water</div>
+      </div>
+    </div>`;
+  }
+  if(!any)html+=`<div class="empty">No history yet. Start logging today!</div>`;
+  const pg=document.getElementById('pgc');if(pg)pg.innerHTML=html;
+}
+
+async function jumpToDay(date){
+  _vd=date;
+  showL('Loading...');
+  const log=await getLog(CU.id,date);
+  _log=log;hideL();
+  document.querySelectorAll('.bni').forEach((b,i)=>b.classList.toggle('on',i===0));
+  renderToday();
+}
+
+// ── JOURNAL ───────────────────────────────────────────────────
+async function loadJournal(){
+  const today=istDate();
+  const log=await getLog(CU.id,today);
+  _jlog=log;
+  const pg=document.getElementById('pgc');if(!pg)return;
+  pg.innerHTML=`
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="sc">
+      <div class="stitle" style="margin-bottom:10px">How are you feeling today?</div>
+      <div class="moodrow">
+        ${['😣 Bad','😕 Low','😐 Okay','🙂 Good','😄 Great'].map((m,i)=>`<button class="moodbtn ${log.mood===i?'on':''}" onclick="pickMood(${i},this)">${m}</button>`).join('')}
+      </div>
+    </div>
+    <div class="sc">
+      <div class="stitle" style="margin-bottom:12px">Vitals</div>
+      <div class="slwrap"><div class="slhdr"><span class="sllbl">Energy level</span><span class="slval" id="sv0">${log.energy||5}/10</span></div><input type="range" min="1" max="10" value="${log.energy||5}" id="sl0" oninput="document.getElementById('sv0').textContent=this.value+'/10'"></div>
+      <div class="slwrap"><div class="slhdr"><span class="sllbl">Sleep quality</span><span class="slval" id="sv1">${log.sleep||7}/10</span></div><input type="range" min="1" max="10" value="${log.sleep||7}" id="sl1" oninput="document.getElementById('sv1').textContent=this.value+'/10'"></div>
+      <div class="slwrap"><div class="slhdr"><span class="sllbl">Stress level</span><span class="slval" id="sv2">${log.stress||3}/10</span></div><input type="range" min="1" max="10" value="${log.stress||3}" id="sl2" oninput="document.getElementById('sv2').textContent=this.value+'/10'"></div>
+      <div class="slwrap"><div class="slhdr"><span class="sllbl">Pain / discomfort</span><span class="slval" id="sv3">${log.pain||0}/10</span></div><input type="range" min="0" max="10" value="${log.pain||0}" id="sl3" oninput="document.getElementById('sv3').textContent=this.value+'/10'"></div>
+    </div>
+    <div class="sc">
+      <div class="stitle" style="margin-bottom:8px">Notes for your doctor</div>
+      <textarea class="ft" id="j-notes" rows="5" placeholder="How was your day? Any symptoms, digestive issues, energy changes, cravings, pain, wins or struggles...">${log.journal||''}</textarea>
+    </div>
+    <button class="bp" onclick="saveJournal()">Save journal</button>
+    <div id="jsaved" style="display:none" class="okbox">✓ Saved</div>
+  </div>`;
+}
+
+function pickMood(val,el){document.querySelectorAll('.moodbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');_jlog.mood=val;}
+
+async function saveJournal(){
+  _jlog.energy=parseInt(document.getElementById('sl0').value);
+  _jlog.sleep=parseInt(document.getElementById('sl1').value);
+  _jlog.stress=parseInt(document.getElementById('sl2').value);
+  _jlog.pain=parseInt(document.getElementById('sl3').value);
+  _jlog.journal=document.getElementById('j-notes').value;
+  await saveLog(CU.id,istDate(),_jlog);
+  const el=document.getElementById('jsaved');el.style.display='block';
+  setTimeout(()=>el.style.display='none',2000);
+}
+
+// ── DOCTOR NOTES ──────────────────────────────────────────────
+async function loadNotes(){
+  const notes=await getNotes(CU.id);
+  const pg=document.getElementById('pgc');if(!pg)return;
+  pg.innerHTML=`
+  <div style="font-family:'Syne';font-size:18px;font-weight:700;margin-bottom:14px">Messages from doctor</div>
+  ${notes.length===0?'<div class="empty">No notes from your doctor yet.</div>':''}
+  ${notes.map(n=>`<div class="notecard"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">${new Date(n.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div><div style="font-size:13px;line-height:1.6">${n.note}</div></div>`).join('')}`;
+}
+
+// ── PROFILE ───────────────────────────────────────────────────
+function showProfile(){
+  const p=CU.profile;
+  document.querySelectorAll('.bni').forEach(b=>b.classList.remove('on'));
+  const pg=document.getElementById('pgc');if(!pg)return;
+  pg.innerHTML=`
+  <div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+      <div class="pavatar">${p.name?.[0]||'?'}</div>
+      <div>
+        <div style="font-family:'Syne';font-size:20px;font-weight:700">${p.name}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${p.age||'?'} yrs · ${p.gender||''}</div>
+        <div style="font-size:11px;color:var(--muted);font-family:'DM Mono'">ID: ${CU.id}</div>
+      </div>
+    </div>
+    <div class="pgrid">
+      ${pf('Height',p.height?p.height+'cm':'—')}${pf('Weight',p.weight?p.weight+'kg':'—')}
+      ${pf('Diet style',p.dietStyle||'—')}${pf('Goal',p.goal||'—')}
+      ${pf('Conditions',p.conditions||'None')}${pf('Allergies',p.allergies||'None')}
+    </div>
+    <div style="margin:14px 0 8px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Doctor targets</div>
+    <div class="pgrid">
+      ${pf('Protein target',p.targets?.protein+'g/day')}${pf('Calorie target',p.targets?.calories+' kcal')}
+    </div>
+    <button class="bo" style="margin-top:14px" onclick="goTab(0)">← Back to today</button>
+  </div>`;
+}
+function pf(l,v){return `<div class="pf"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">${l}</div><div style="font-size:13px">${v}</div></div>`;}
+
+// ══════════════════════════════════════════════════════════════
+// DOCTOR DASHBOARD
+// ══════════════════════════════════════════════════════════════
+async function showDocApp(){
+  document.getElementById('app').innerHTML=`
+  <div class="shell">
+    <div class="topbar">
+      <div><div class="tl">❤️ HealthTrack</div><div class="tsub" style="color:#818cf8">Doctor Dashboard</div></div>
+      <div style="display:flex;gap:6px">
+        <button class="ibtn" onclick="loadAlerts()">🔔</button>
+        <button class="ibtn" onclick="logout()">⎋</button>
+      </div>
+    </div>
+    <div class="pgc" id="pgc" style="max-width:900px"><div style="text-align:center;color:var(--muted);padding:40px">Loading...</div></div>
+  </div>`;
+  hideL();
+  await loadDocPatients();
+}
+
+async function loadDocPatients(){
+  const patients=await allPatients();
+  const today=istDate();
+  let html=`<div class="dochdr">
+    <div style="font-family:'Syne';font-size:20px;font-weight:700">${patients.length} patients</div>
+    <div style="display:flex;gap:8px">
+      <select class="fs" id="rng" onchange="loadDocPatients()" style="width:auto;padding:6px 10px">
+        <option value="7">Last 7 days</option><option value="30">Last 30 days</option>
+      </select>
+      <button class="bsm" onclick="showCreateP()">+ Add patient</button>
+    </div>
+  </div><div class="pgrd">`;
+
+  for(const pat of patients){
+    const days=parseInt(document.getElementById('rng')?.value||'7');
+    const logs=await patientLogs(pat.id,days);
+    const ld=Object.values(logs).filter(l=>l.meals?.length||l.activity||l.journal).length;
+    const avgP=ld?Math.round(Object.values(logs).reduce((s,l)=>s+recalc(l.meals||[]).p,0)/ld):0;
+    const last=Object.entries(logs).filter(([,l])=>l.meals?.length||l.activity).sort((a,b)=>b[0].localeCompare(a[0]))[0];
+    const todayLogged=!!(logs[today]?.meals?.length||logs[today]?.activity);
+    html+=`<div class="pcard" onclick="viewPat('${pat.id}')">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div class="pcavatar">${pat.name?.[0]||'?'}</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600">${pat.name}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${pat.age||'?'} · ${pat.gender||''} · ${pat.id}</div></div>
+        <div class="sdot" style="background:${todayLogged?'#22c55e':'var(--danger)'};color:#fff">${todayLogged?'✓':'!'}</div>
+      </div>
+      <div class="pstats">
+        <div class="pst"><div class="pstv">${ld}/${days}</div><div class="pstl">days logged</div></div>
+        <div class="pst"><div class="pstv" style="color:#4ade80">${avgP}g</div><div class="pstl">avg protein</div></div>
+        <div class="pst"><div class="pstv">${last?fmtDate(last[0]):'Never'}</div><div class="pstl">last active</div></div>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        ${pat.goal?`<span class="ptag">${pat.goal}</span>`:''}
+        ${pat.conditions?`<span class="ptag" style="background:rgba(251,191,36,.1);color:var(--warn)">⚕ ${pat.conditions}</span>`:''}
+      </div>
+    </div>`;
+  }
+  html+=`</div>`;
+  const pg=document.getElementById('pgc');if(pg)pg.innerHTML=html;
+}
+
+async function viewPat(pid){
+  showL('Loading...');
+  const pat=await getP(pid);
+  const logs=await patientLogs(pid,30);
+  const notes=await getNotes(pid);
+  hideL();
+  const ld=Object.keys(logs).filter(d=>logs[d].meals?.length||logs[d].activity||logs[d].journal).sort((a,b)=>b.localeCompare(a));
+  const avg={p:0,c:0,f:0,cal:0,fi:0,energy:0,sleep:0,water:0};
+  ld.forEach(d=>{
+    const t=recalc(logs[d].meals||[]);
+    avg.p+=t.p;avg.c+=t.c;avg.f+=t.f;avg.cal+=t.cal;avg.fi+=t.fi;
+    avg.energy+=logs[d].energy||0;avg.sleep+=logs[d].sleep||0;avg.water+=logs[d].water||0;
+  });
+  const n=ld.length||1;
+  Object.keys(avg).forEach(k=>avg[k]=Math.round(avg[k]/n*10)/10);
+  const actC={};ld.forEach(d=>{const t=logs[d].activity?.type;if(t)actC[t]=(actC[t]||0)+1;});
+  window._pd={pat,logs,ld,avg};
+
+  const pg=document.getElementById('pgc');if(!pg)return;
+  pg.innerHTML=`
+  <div>
+    <button class="backbtn" onclick="loadDocPatients()">← All patients</button>
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="pcavatar lg">${pat.name?.[0]}</div>
+      <div style="flex:1">
+        <div style="font-family:'Syne';font-size:20px;font-weight:700">${pat.name}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${pat.age||'?'} yrs · ${pat.gender||''} · ${pat.dietStyle||''}</div>
+        <div style="font-size:12px;color:var(--muted)">Goal: ${pat.goal||'—'} · ID: ${pid}</div>
+        ${pat.conditions?`<div style="font-size:11px;color:var(--warn);background:rgba(251,191,36,.1);padding:3px 8px;border-radius:6px;display:inline-block;margin-top:4px">⚕ ${pat.conditions}</div>`:''}
+      </div>
+      <button class="bsm" style="background:rgba(129,140,248,.2);color:#818cf8;border:1px solid rgba(129,140,248,.3)" onclick="genAISummary('${pid}')">🤖 AI Summary</button>
+    </div>
+
+    <div id="ai-box" style="display:none" class="aibox">
+      <div style="font-size:11px;color:#818cf8;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🤖 AI Summary</div>
+      <div id="ai-txt" style="font-size:13px;color:#ccc;line-height:1.85;white-space:pre-wrap">Generating...</div>
+    </div>
+
+    <div class="dtabs">
+      <button class="dtab on" onclick="dTab('n',this)">Nutrition</button>
+      <button class="dtab" onclick="dTab('a',this)">Activity</button>
+      <button class="dtab" onclick="dTab('l',this)">Logs</button>
+      <button class="dtab" onclick="dTab('nt',this)">Notes</button>
+      <button class="dtab" onclick="dTab('t',this)">Targets</button>
+    </div>
+
+    <div id="dp-n">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">30-day averages (${ld.length} days logged)</div>
+      <div class="agrid">
+        ${ac('Avg protein',avg.p+'g',pat.targets?.protein,'g','#4ade80')}
+        ${ac('Avg calories',avg.cal+' kcal',pat.targets?.calories,' kcal','#fbbf24')}
+        ${ac('Avg carbs',avg.c+'g',null,null,'#60a5fa')}
+        ${ac('Avg fat',avg.f+'g',null,null,'#f472b6')}
+        ${ac('Avg fibre',avg.fi+'g',null,null,'#fb923c')}
+        ${ac('Avg water',avg.water+'L',null,null,'#67e8f9')}
+        ${ac('Avg energy',avg.energy+'/10',null,null,'#a78bfa')}
+        ${ac('Avg sleep',avg.sleep+'/10',null,null,'#818cf8')}
+      </div>
+    </div>
+
+    <div id="dp-a" style="display:none">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Activity breakdown (30 days)</div>
+      ${Object.entries(actC).sort((a,b)=>b[1]-a[1]).map(([t,c])=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--faint)">
+          <div style="font-size:12px;width:170px;flex-shrink:0">${t}</div>
+          <div style="flex:1;height:6px;background:var(--faint);border-radius:3px;overflow:hidden"><div style="height:100%;background:var(--accent);border-radius:3px;width:${Math.round(c/ld.length*100)}%"></div></div>
+          <div style="font-size:11px;color:var(--muted);font-family:'DM Mono';width:40px;text-align:right">${c}d</div>
+        </div>`).join('')||'<div class="empty">No activity logged</div>'}
+    </div>
+
+    <div id="dp-l" style="display:none">
+      ${ld.slice(0,14).map(date=>{
+        const l=logs[date],t=recalc(l.meals||[]);
+        return `<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--faint);flex-wrap:wrap">
+          <div style="width:85px;font-size:13px;font-weight:500">${fmtDate(date)}</div>
+          <div style="flex:1;font-size:12px;color:var(--muted)">${l.activity?.type||'—'}</div>
+          <div style="font-size:11px;font-family:'DM Mono';color:var(--muted)">P:${t.p}g ${t.cal}kcal ${l.meals?.length||0}meals</div>
+        </div>`;}).join('')||'<div class="empty">No logs yet</div>'}
+    </div>
+
+    <div id="dp-nt" style="display:none">
+      <div style="margin-bottom:14px">
+        <label class="fl">Write note for ${pat.name}</label>
+        <textarea class="ft" id="new-note" rows="3" placeholder="Recommendations, observations, dietary instructions..."></textarea>
+        <button class="bsm" style="margin-top:8px;width:100%" onclick="doSendNote('${pid}')">Send note to patient</button>
+      </div>
+      ${notes.map(nt=>`<div class="notecard"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">${new Date(nt.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div><div style="font-size:13px;line-height:1.6">${nt.note}</div></div>`).join('')}
+      ${notes.length===0?'<div class="empty">No notes yet</div>':''}
+    </div>
+
+    <div id="dp-t" style="display:none">
+      <div style="max-width:280px;display:flex;flex-direction:column;gap:10px">
+        <div><label class="fl">Daily protein (g)</label><input class="fi" id="tg-p" type="number" value="${pat.targets?.protein||100}"></div>
+        <div><label class="fl">Daily calories (kcal)</label><input class="fi" id="tg-c" type="number" value="${pat.targets?.calories||2000}"></div>
+        <div><label class="fl">Activity days/week</label><input class="fi" id="tg-a" type="number" value="${pat.targets?.activityDays||4}" min="0" max="7"></div>
+        <button class="bsm" style="width:100%" onclick="doSaveTargets('${pid}')">Save targets</button>
+        <div id="tg-ok" style="display:none" class="okbox">✓ Targets saved</div>
+      </div>
+    </div>
+    <div style="height:30px"></div>
+  </div>`;
+}
+
+function dTab(t,el){
+  document.querySelectorAll('.dtab').forEach(b=>b.classList.remove('on'));el.classList.add('on');
+  ['n','a','l','nt','t'].forEach(id=>{const e=document.getElementById('dp-'+id);if(e)e.style.display=id===t?'block':'none';});
+}
+
+function ac(label,val,target,unit,color){
+  return `<div class="acard"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:3px">${label}</div><div style="font-family:'DM Mono';font-size:17px;font-weight:600;color:${color}">${val}</div>${target?`<div style="font-size:10px;color:var(--muted)">Target: ${target}${unit}</div>`:''}</div>`;
+}
+
+async function genAISummary(pid){
+  const box=document.getElementById('ai-box');
+  const txt=document.getElementById('ai-txt');
+  if(!box||!txt){alert('Please scroll up — AI summary box is above.');return;}
+  box.style.display='block';
+  txt.textContent='Generating AI clinical summary...';
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+  try{
+    const {pat,logs,ld,avg}=window._pd||{};
+    if(!ld||ld.length===0){txt.textContent='No logged data yet. Need at least 1 day of data to generate a summary.';return;}
+    const recent=ld.slice(0,7).map(d=>{
+      const l=logs[d],t=recalc(l.meals||[]);
+      const meals=(l.meals||[]).map(m=>m.name).filter(Boolean).join(', ')||'none';
+      return `${fmtDate(d)}: activity=${l.activity?.type||'none'} protein=${t.p}g calories=${t.cal} energy=${l.energy||'?'}/10 sleep=${l.sleep||'?'}/10 meals=[${meals}] notes="${(l.journal||'').substring(0,80)}"`;
+    }).join('\n');
+    const prompt=`You are a clinical nutritionist and healthcare professional reviewing patient health data.\n\nPatient profile:\nName: ${pat.name}, Age: ${pat.age||'?'}, Gender: ${pat.gender||'?'}\nDietary style: ${pat.dietStyle||'?'}\nHealth goal: ${pat.goal||'?'}\nMedical conditions: ${pat.conditions||'None'}\nAllergies: ${pat.allergies||'None'}\nDoctor's targets: Protein ${pat.targets?.protein||100}g/day, Calories ${pat.targets?.calories||2000}/day\n\n30-day averages (${ld.length} days of data):\nProtein: ${avg.p}g/day | Calories: ${avg.cal}/day | Carbs: ${avg.c}g | Fat: ${avg.f}g | Fibre: ${avg.fi}g\nWater: ${avg.water}L/day | Energy: ${avg.energy}/10 | Sleep: ${avg.sleep}/10\n\nRecent 7 days detail:\n${recent}\n\nWrite a concise clinical summary with exactly these sections:\n\nOVERALL STATUS: [Good / Needs attention / Concerning]\n\nNUTRITION ANALYSIS:\n[Key findings about their nutrition — what they eat, what's missing]\n\nACTIVITY PATTERN:\n[Assessment of their physical activity]\n\nAREAS OF CONCERN:\n[Specific issues that need attention]\n\nRECOMMENDATIONS:\n1. [First recommendation]\n2. [Second recommendation]\n3. [Third recommendation]\n\nKeep it under 250 words. Use professional clinical language.`;
+    const result=await callGemini(prompt);
+    if(!result||result.trim()===''){
+      txt.textContent='Gemini returned an empty response. Check that the API key is valid and has available quota.';
+      return;
+    }
+    txt.style.whiteSpace='pre-wrap';
+    txt.textContent=result;
+  }catch(err){
+    txt.textContent='Error: '+err.message+'\n\nThis may be a network or API key issue.';
+    console.error('AI Summary error:',err);
+  }
+}
+
+async function doSendNote(pid){
+  const note=(document.getElementById('new-note').value||'').trim();
+  if(!note)return;
+  await addNote(pid,note);
+  document.getElementById('new-note').value='';
+  alert('Note sent to patient!');
+  await viewPat(pid);
+  dTab('nt',document.querySelectorAll('.dtab')[3]);
+}
+
+async function doSaveTargets(pid){
+  const targets={
+    protein:parseInt(document.getElementById('tg-p').value)||100,
+    calories:parseInt(document.getElementById('tg-c').value)||2000,
+    activityDays:parseInt(document.getElementById('tg-a').value)||4
+  };
+  await saveP(pid,{targets});
+  window._pd.pat.targets=targets;
+  document.getElementById('tg-ok').style.display='block';
+}
+
+// ── ALERTS ────────────────────────────────────────────────────
+async function loadAlerts(){
+  showL('Checking patients...');
+  const patients=await allPatients();
+  const today=istDate();
+  const critical=[],warnings=[];
+
+  for(const pat of patients){
+    const logs=await patientLogs(pat.id,7);
+    // Consecutive days not logged
+    let cons=0;
+    for(let i=0;i<7;i++){
+      const d=shiftDate(today,-i);
+      if(!logs[d]?.meals?.length&&!logs[d]?.activity&&!logs[d]?.journal)cons++;
+      else break;
+    }
+    if(cons>=3)critical.push({pid:pat.id,name:pat.name,icon:'📵',msg:`Not logged in ${cons} consecutive days`,bg:'rgba(248,113,113,.15)'});
+
+    const loggedDays=Object.values(logs).filter(l=>l.meals?.length);
+    if(loggedDays.length>=2){
+      const avgP=loggedDays.reduce((s,l)=>s+recalc(l.meals||[]).p,0)/loggedDays.length;
+      if(avgP<(pat.targets?.protein||100)*0.5)critical.push({pid:pat.id,name:pat.name,icon:'⚠️',msg:`Protein critically low: avg ${Math.round(avgP)}g vs ${pat.targets?.protein||100}g target`,bg:'rgba(248,113,113,.15)'});
+      else if(avgP<(pat.targets?.protein||100)*0.75)warnings.push({pid:pat.id,name:pat.name,icon:'🥗',msg:`Protein below target: avg ${Math.round(avgP)}g (target ${pat.targets?.protein||100}g)`,bg:'rgba(251,191,36,.15)'});
+    }
+    const highPain=Object.values(logs).filter(l=>(l.pain||0)>=7);
+    if(highPain.length>=2)warnings.push({pid:pat.id,name:pat.name,icon:'🔴',msg:`High pain reported (≥7/10) on ${highPain.length} days`,bg:'rgba(251,191,36,.15)'});
+    const sedentary=Object.values(logs).filter(l=>l.activity?.type==='Sedentary / desk day').length;
+    if(sedentary>=5)warnings.push({pid:pat.id,name:pat.name,icon:'🪑',msg:`${sedentary}/7 days sedentary`,bg:'rgba(129,140,248,.15)'});
+    const lowE=Object.values(logs).filter(l=>l.energy!==undefined&&l.energy!==null&&l.energy<4);
+    if(lowE.length>=3)warnings.push({pid:pat.id,name:pat.name,icon:'😔',msg:`Low energy (<4/10) on ${lowE.length} days this week`,bg:'rgba(129,140,248,.15)'});
+  }
+
+  hideL();
+  const all=[...critical,...warnings];
+  const pg=document.getElementById('pgc');if(!pg)return;
+  pg.innerHTML=`
+  <button class="backbtn" onclick="loadDocPatients()">← All patients</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="font-family:'Syne';font-size:18px;font-weight:700">${all.length} alerts</div>
+    <div style="font-size:12px;color:var(--muted)">${critical.length} critical · ${warnings.length} warnings</div>
+  </div>
+  ${all.length===0?'<div class="empty" style="margin-top:40px">✅ All patients on track. No alerts this week.</div>':''}
+  ${critical.length?`<div style="font-size:11px;font-weight:700;color:var(--danger);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Critical</div>`:''}
+  ${critical.map(a=>`<div class="alertrow" onclick="viewPat('${a.pid}')">
+    <div class="aicon" style="background:${a.bg}">${a.icon}</div>
+    <div><div style="font-size:14px;font-weight:600">${a.name} <span style="color:var(--muted);font-size:11px">${a.pid}</span></div><div style="font-size:12px;color:var(--muted);margin-top:2px">${a.msg}</div></div>
+  </div>`).join('')}
+  ${warnings.length?`<div style="font-size:11px;font-weight:700;color:var(--warn);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 8px">Warnings</div>`:''}
+  ${warnings.map(a=>`<div class="alertrow" onclick="viewPat('${a.pid}')">
+    <div class="aicon" style="background:${a.bg}">${a.icon}</div>
+    <div><div style="font-size:14px;font-weight:600">${a.name} <span style="color:var(--muted);font-size:11px">${a.pid}</span></div><div style="font-size:12px;color:var(--muted);margin-top:2px">${a.msg}</div></div>
+  </div>`).join('')}`;
+}
+
+// ── START ─────────────────────────────────────────────────────
+showPin();
+</script>
+</body>
+</html>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// COMPREHENSIVE FIX PATCH
+// ═══════════════════════════════════════════════════════════════
+
+// ── 1. DATE FIX — show actual date alongside Today/Yesterday ──
+var _origFmtDate = fmtDate;
+fmtDate = function(ds) {
+  const today = istDate();
+  const yesterday = shiftDate(today, -1);
+  const [y,m,d] = ds.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  const actual = dt.toLocaleDateString('en-IN', {day:'numeric', month:'short'});
+  if (ds === today) return `Today · ${actual}`;
+  if (ds === yesterday) return `Yesterday · ${actual}`;
+  return dt.toLocaleDateString('en-IN', {weekday:'short', day:'numeric', month:'short', year:'numeric'});
+};
+
+// ── 2. DATE NAV — ensure _vd is always set to today on app open ─
+var _origShowPatApp = showPatApp;
+showPatApp = function() {
+  _vd = istDate(); // always reset to today when entering patient app
+  _origShowPatApp();
+};
+
+// ── 3. BETTER GEMINI VISION — fix photo returning 0 ──────────
+callGeminiVision = async function(b64, mime) {
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{parts:[
+          {inline_data:{mime_type:mime, data:b64}},
+          {text:`You are a nutritionist. Look at this food image carefully and identify ALL food items visible.
+For each item estimate portion size and nutritional values.
+Use these Indian food baselines:
+Dal chawal(dal+rice 1plate): p=13,c=65,f=3,cal=343
+Poha 1plate: p=4,c=32,f=4,cal=177
+Banana shake 1glass: p=8,c=38,f=5,cal=225
+Chapati 1piece: p=3,c=18,f=1,cal=93
+Rice 1bowl: p=4,c=45,f=0.5,cal=200
+Dal 1bowl: p=9,c=20,f=3,cal=143
+Egg boiled 1: p=6,c=0.5,f=5,cal=77
+Paneer 100g: p=18,c=4,f=20,cal=265
+
+Return ONLY this JSON format with no other text:
+{"items":[{"name":"food item","portion":"estimated portion","p":0,"c":0,"f":0,"cal":0,"fi":0}],"totals":{"p":0,"c":0,"f":0,"cal":0,"fi":0,"conf":"medium"},"desc":"brief description"}`}
+        ]}],
+        generationConfig:{maxOutputTokens:800, temperature:0.1}
+      })
+    });
+    const d = await r.json();
+    if (!d.candidates || !d.candidates[0]) {
+      console.error('Gemini vision no candidates:', JSON.stringify(d));
+      return null;
+    }
+    const text = d.candidates[0].content?.parts?.[0]?.text || '';
+    try {
+      return JSON.parse(text.replace(/```json|```/g,'').trim());
+    } catch(e) {
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) { try { return JSON.parse(match[0]); } catch(e2) {} }
+      console.error('Gemini vision parse error:', text);
+      return null;
+    }
+  } catch(e) {
+    console.error('Gemini vision error:', e);
+    return null;
+  }
+};
+
+// ── 4. COMPLETE MEAL MODAL REBUILD ───────────────────────────
+// Fixes: remove pre/post workout, add manual entry, add custom activity, water slider
+openMealModal = function() {
+  _meal = {type:'', method:'text', result:null, b64:null, mime:null, desc:'', photoUrl:null};
+  const el = document.createElement('div');
+  el.className='mbg'; el.id='_modal';
+  el.innerHTML = `
+  <div class="mbox">
+    <div class="mhd">
+      <div class="mtitle">Log meal / food</div>
+      <button class="xbtn" onclick="closeModal()">✕</button>
+    </div>
+
+    <label class="fl">Meal type</label>
+    <div class="mtgrid" style="margin-bottom:14px">
+      ${['Breakfast','Lunch','Dinner','Snack','Other'].map(t=>`<button class="mtbtn" onclick="pickMT('${t}',this)">${t}</button>`).join('')}
+    </div>
+
+    <label class="fl" style="margin-bottom:5px">Meal name (optional)</label>
+    <input class="fi" id="m-name" placeholder="e.g. Dal chawal, Banana shake, Poha..." style="margin-bottom:14px">
+
+    <label class="fl" style="margin-bottom:6px">How to log?</label>
+    <div class="methrow" style="margin-bottom:14px">
+      <button class="methbtn on" id="mb-txt" onclick="pickMeth2('text',this)">📝 Describe food</button>
+      <button class="methbtn" id="mb-img" onclick="pickMeth2('photo',this)">📷 Photo</button>
+      <button class="methbtn" id="mb-man" onclick="pickMeth2('manual',this)">🔢 Enter macros</button>
+    </div>
+
+    <div id="p2-text">
+      <label class="fl" style="margin-bottom:5px">What did you eat? Be specific about portions.</label>
+      <textarea class="ft" id="m-txt2" rows="4" placeholder="Examples:&#10;• 1 plate poha with peanuts&#10;• Dal chawal — 1 bowl dal + 1 bowl rice&#10;• Banana shake — 1 banana + 1 glass milk&#10;• 2 chapati, 1 bowl sabzi, dahi"></textarea>
+      <button class="abtn" id="btn-atxt2" onclick="doAnalyseText2()">🤖 Analyse nutrition</button>
+    </div>
+
+    <div id="p2-photo" style="display:none">
+      <div class="pzone" onclick="document.getElementById('photo-inp2').click()">
+        <div id="photo-prev2">
+          <div style="font-size:36px;margin-bottom:8px">📷</div>
+          <div style="font-size:14px;font-weight:500">Take photo or choose from gallery</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">AI will identify food items and estimate nutrition</div>
+        </div>
+      </div>
+      <input type="file" id="photo-inp2" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto2(this)">
+      <button class="abtn" id="btn-aimg2" style="display:none" onclick="doAnalysePhoto2()">🤖 Analyse photo</button>
+    </div>
+
+    <div id="p2-manual" style="display:none">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Enter nutritional values directly if you already know them.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label class="fl">Protein (g)</label><input class="fi" id="man-p" type="number" placeholder="0" min="0"></div>
+        <div><label class="fl">Carbs (g)</label><input class="fi" id="man-c" type="number" placeholder="0" min="0"></div>
+        <div><label class="fl">Fat (g)</label><input class="fi" id="man-f" type="number" placeholder="0" min="0"></div>
+        <div><label class="fl">Calories (kcal)</label><input class="fi" id="man-cal" type="number" placeholder="0" min="0"></div>
+        <div><label class="fl">Fibre (g)</label><input class="fi" id="man-fi" type="number" placeholder="0" min="0"></div>
+        <div><label class="fl">Portion / notes</label><input class="fi" id="man-desc" placeholder="e.g. 1 scoop, 100g"></div>
+      </div>
+      <button class="abtn" onclick="useManualEntry()">✓ Use these values</button>
+    </div>
+
+    <div id="nut-result2" style="display:none" class="rwrap">
+      <div class="rtitle">Nutrition estimate</div>
+      <div id="r-items2"></div>
+      <div class="rtots" id="r-tots2"></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px" id="r-conf2"></div>
+    </div>
+
+    <button class="bp" id="btn-save-meal2" style="display:none;margin-top:14px" onclick="doSaveMeal2()">✓ Save meal</button>
+  </div>`;
+  document.body.appendChild(el);
+};
+
+function pickMeth2(m, el) {
+  document.querySelectorAll('.methbtn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on'); _meal.method=m;
+  document.getElementById('p2-text').style.display=m==='text'?'block':'none';
+  document.getElementById('p2-photo').style.display=m==='photo'?'block':'none';
+  document.getElementById('p2-manual').style.display=m==='manual'?'block':'none';
+}
+
+async function doAnalyseText2() {
+  const txt=(document.getElementById('m-txt2').value||'').trim();
+  if(!txt){alert('Describe your meal first');return;}
+  const btn=document.getElementById('btn-atxt2');
+  btn.textContent='⏳ Analysing...'; btn.disabled=true;
+  const r=await analyseText(txt);
+  btn.textContent='🤖 Analyse nutrition'; btn.disabled=false;
+  if(!r){
+    // Fallback: show error with suggestion
+    document.getElementById('nut-result2').style.display='block';
+    document.getElementById('r-items2').innerHTML='<div style="color:var(--danger);font-size:12px">Could not analyse automatically. Try switching to "Enter macros" and entering values manually.</div>';
+    document.getElementById('btn-save-meal2').style.display='block';
+    _meal.result={items:[],totals:{p:0,c:0,f:0,cal:0,fi:0,conf:'none'}};
+    return;
+  }
+  _meal.desc=txt; _meal.result=r;
+  showResult2(r);
+}
+
+function handlePhoto2(inp) {
+  const file=inp.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    _meal.b64=e.target.result.split(',')[1];
+    _meal.mime=file.type;
+    _meal.photoUrl=e.target.result;
+    document.getElementById('photo-prev2').innerHTML=`<img src="${e.target.result}" style="width:100%;border-radius:8px;max-height:220px;object-fit:cover">`;
+    document.getElementById('btn-aimg2').style.display='block';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function doAnalysePhoto2() {
+  if(!_meal.b64){alert('Select a photo first');return;}
+  const btn=document.getElementById('btn-aimg2');
+  btn.textContent='⏳ Analysing photo...'; btn.disabled=true;
+  const r=await callGeminiVision(_meal.b64, _meal.mime);
+  btn.textContent='🤖 Analyse photo'; btn.disabled=false;
+  if(!r){
+    alert('Could not analyse photo automatically.\n\nTip: Use a well-lit photo with food clearly visible.\nOr switch to "Describe food" or "Enter macros" instead.');
+    return;
+  }
+  _meal.result=r;
+  showResult2(r);
+}
+
+function useManualEntry() {
+  const p=parseFloat(document.getElementById('man-p').value)||0;
+  const c=parseFloat(document.getElementById('man-c').value)||0;
+  const f=parseFloat(document.getElementById('man-f').value)||0;
+  const cal=parseFloat(document.getElementById('man-cal').value)||(p*4+c*4+f*9);
+  const fi=parseFloat(document.getElementById('man-fi').value)||0;
+  const desc=document.getElementById('man-desc').value||'';
+  const mealName=(document.getElementById('m-name').value||'').trim();
+  _meal.result={
+    items:[{name:mealName||'Custom entry',portion:desc,p,c,f,cal,fi}],
+    totals:{p,c,f,cal,fi,conf:'manual'}
+  };
+  _meal.desc=desc;
+  showResult2(_meal.result);
+}
+
+function showResult2(r) {
+  document.getElementById('nut-result2').style.display='block';
+  const items=r.items||[];
+  document.getElementById('r-items2').innerHTML=items.map(it=>
+    `<div class="rrow"><span>${it.name} <span style="color:var(--muted);font-size:11px">${it.portion||''}</span></span><span style="font-family:'DM Mono';font-size:11px;color:var(--muted)">P:${it.p||0}g C:${it.c||0}g ${it.cal||0}kcal</span></div>`
+  ).join('');
+  const t=r.totals||{};
+  document.getElementById('r-tots2').innerHTML=`
+    <span class="rtot" style="color:#4ade80">Protein: ${t.p||0}g</span>
+    <span class="rtot" style="color:#60a5fa">Carbs: ${t.c||0}g</span>
+    <span class="rtot" style="color:#f472b6">Fat: ${t.f||0}g</span>
+    <span class="rtot" style="color:#fbbf24">${t.cal||0} kcal</span>
+    ${t.fi?`<span class="rtot" style="color:#fb923c">Fibre: ${t.fi}g</span>`:''}`;
+  document.getElementById('r-conf2').textContent=t.conf==='manual'?'Manually entered values':`Confidence: ${t.conf||'medium'} · AI estimates ±15%`;
+  document.getElementById('btn-save-meal2').style.display='block';
+}
+
+async function doSaveMeal2() {
+  const r=_meal.result||{};
+  const t=r.totals||{};
+  const meal={
+    name:(document.getElementById('m-name').value||'').trim()||(_meal.type||'Meal'),
+    mealType:_meal.type||'',
+    time:nowTime(),
+    desc:_meal.method==='text'?(document.getElementById('m-txt2')?.value||'').trim():(_meal.method==='manual'?'Manual entry':'Photo'),
+    n:{p:t.p||0,c:t.c||0,f:t.f||0,cal:t.cal||0,fi:t.fi||0},
+    nutritionItems:r.items||[],
+    aiConf:t.conf||'',
+    photoUrl:_meal.photoUrl||null,
+    addedAt:new Date().toISOString()
+  };
+  if(!_log.meals)_log.meals=[];
+  _log.meals.push(meal);
+  await saveLog(CU.id, _vd, _log);
+  closeModal();
+  renderToday();
+}
+
+// ── 5. WATER SLIDER ──────────────────────────────────────────
+// Override renderToday to replace water buttons with slider
+var _origRenderToday = renderToday;
+renderToday = function() {
+  _origRenderToday();
+  // Replace water section with slider
+  const sc = document.querySelector('#pgc .sc:last-child');
+  if (!sc) return;
+  const water = _log.water || 0;
+  sc.innerHTML = `
+    <div class="stitle" style="margin-bottom:12px">Water intake</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <span style="font-size:12px;color:var(--muted)">0L</span>
+      <input type="range" min="0" max="5000" step="100" value="${Math.round(water*1000)}"
+        id="water-slider" oninput="updateWaterSlider(this.value)"
+        onchange="saveWaterSlider(this.value)"
+        style="flex:1;accent-color:var(--accent)">
+      <span style="font-size:12px;color:var(--muted)">5L</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div id="water-display" style="font-size:18px;font-weight:600;font-family:'DM Mono';color:#67e8f9">${water.toFixed(1)}L</div>
+      <div style="font-size:11px;color:var(--muted)">slide to update · 100ml steps</div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+      ${[0.5,1,1.5,2,2.5,3].map(v=>`<button onclick="quickSetWater(${v})" style="padding:4px 10px;background:var(--faint);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;cursor:pointer">+${v}L</button>`).join('')}
+    </div>`;
+};
+
+function updateWaterSlider(ml) {
+  const l = ml/1000;
+  document.getElementById('water-display').textContent = l.toFixed(1)+'L';
+}
+
+async function saveWaterSlider(ml) {
+  const l = ml/1000;
+  _log.water = l;
+  await saveLog(CU.id, _vd, _log);
+}
+
+async function quickSetWater(val) {
+  const current = _log.water || 0;
+  const newVal = Math.min(5, current + val);
+  _log.water = newVal;
+  await saveLog(CU.id, _vd, _log);
+  const slider = document.getElementById('water-slider');
+  if(slider) slider.value = newVal * 1000;
+  const display = document.getElementById('water-display');
+  if(display) display.textContent = newVal.toFixed(1)+'L';
+}
+
+// ── 6. CUSTOM ACTIVITY TEXT FIELD ───────────────────────────
+var _origSaveAct = saveAct;
+saveAct = async function() {
+  const type = document.getElementById('act-t')?.value;
+  const dur = document.getElementById('act-d')?.value;
+  const custom = document.getElementById('act-custom')?.value;
+  if(!_log.activity) _log.activity={};
+  _log.activity.type = type==='Other'&&custom ? custom : type;
+  _log.activity.duration = dur;
+  await saveLog(CU.id, _vd, _log);
+  // Show/hide custom field
+  const cf = document.getElementById('custom-act-wrap');
+  if(cf) cf.style.display = type==='Other' ? 'block' : 'none';
+};
+
+// Patch renderToday to add custom activity field
+var _origRenderToday2 = renderToday;
+renderToday = function() {
+  _origRenderToday2();
+  // Find activity section and add custom field after select
+  setTimeout(function() {
+    const actSel = document.getElementById('act-t');
+    if(!actSel) return;
+    if(!document.getElementById('custom-act-wrap')) {
+      const wrap = document.createElement('div');
+      wrap.id = 'custom-act-wrap';
+      wrap.style.cssText = 'margin-top:8px;display:' + (_log.activity?.type==='Other'?'block':'none');
+      wrap.innerHTML = '<input class="fi" id="act-custom" placeholder="Describe your activity..." value="' + (_log.activity?.customNote||'') + '" onchange="saveCustomAct()">';
+      actSel.parentNode.insertAdjacentElement('afterend', wrap);
+    }
+  }, 50);
+};
+
+async function saveCustomAct() {
+  const custom = document.getElementById('act-custom')?.value;
+  if(!_log.activity) _log.activity={};
+  _log.activity.type = custom || 'Other';
+  _log.activity.customNote = custom;
+  await saveLog(CU.id, _vd, _log);
+}
+
+// ── 7. MEDICATIONS + SUPPLEMENTS TAB ────────────────────────
+// Add to patient nav
+var _origShowPatApp2 = showPatApp;
+showPatApp = function() {
+  _vd = istDate();
+  _origShowPatApp2();
+  // Inject medications tab into bottom nav
+  setTimeout(function() {
+    const nav = document.querySelector('.bnav');
+    if(nav && !document.getElementById('bn-meds')) {
+      const medBtn = document.createElement('div');
+      medBtn.className = 'bni';
+      medBtn.id = 'bn-meds';
+      medBtn.innerHTML = '<div style="font-size:20px">💊</div><div>Meds</div>';
+      medBtn.onclick = function() { goTabMeds(this); };
+      nav.appendChild(medBtn);
+    }
+  }, 100);
+};
+
+function goTabMeds(el) {
+  document.querySelectorAll('.bni').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  loadMedsPage();
+}
+
+async function loadMedsPage() {
+  const today = istDate();
+  const log = await getLog(CU.id, today);
+  _log = log;
+  const meds = log.meds || [];
+  const sups = log.supplements || [];
+  const pg = document.getElementById('pgc'); if(!pg) return;
+  pg.innerHTML = `
+  <div style="display:flex;flex-direction:column;gap:14px">
+
+    <div class="sc">
+      <div class="shdr">
+        <div class="stitle">Medications today</div>
+        <button class="bsm" onclick="addMedModal()">+ Add</button>
+      </div>
+      <div id="meds-list">
+        ${meds.length===0?'<div class="empty">No medications logged today.</div>':''}
+        ${meds.map((m,i)=>`
+          <div style="background:var(--faint);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;font-weight:600">${m.name}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">${m.dose||''} ${m.timing?'· '+m.timing:''}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:18px;cursor:pointer" onclick="toggleMed(${i})">${m.taken?'✅':'⬜'}</span>
+              <button class="delbtn" onclick="delMed(${i})">✕</button>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="sc">
+      <div class="shdr">
+        <div class="stitle">Supplements today</div>
+        <button class="bsm" onclick="addSupModal()">+ Add</button>
+      </div>
+      <div id="sups-list">
+        ${sups.length===0?'<div class="empty">No supplements logged today.</div>':''}
+        ${sups.map((s,i)=>`
+          <div style="background:var(--faint);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;font-weight:600">${s.name}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">${s.dose||''} ${s.timing?'· '+s.timing:''}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:18px;cursor:pointer" onclick="toggleSup(${i})">${s.taken?'✅':'⬜'}</span>
+              <button class="delbtn" onclick="delSup(${i})">✕</button>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="sc">
+      <div class="stitle" style="margin-bottom:10px">Quick add supplements</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${['Protein scoop','Multivitamin','Omega-3','Vitamin D','Vitamin B12','Calcium','Iron','Zinc','Magnesium','Creatine','Collagen'].map(s=>
+          `<button onclick="quickAddSup('${s}')" style="padding:5px 12px;background:var(--faint);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:12px;cursor:pointer">${s}</button>`
+        ).join('')}
+      </div>
+    </div>
+
+  </div>`;
+}
+
+function addMedModal() {
+  const el = document.createElement('div');
+  el.className='mbg'; el.id='_modal';
+  el.innerHTML=`
+  <div class="mbox">
+    <div class="mhd"><div class="mtitle">Add medication</div><button class="xbtn" onclick="closeModal()">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div><label class="fl">Medication name</label><input class="fi" id="med-name" placeholder="e.g. Metformin, Amlodipine..."></div>
+      <div><label class="fl">Dose</label><input class="fi" id="med-dose" placeholder="e.g. 500mg, 10mg"></div>
+      <div><label class="fl">When to take</label>
+        <select class="fs" id="med-timing">
+          <option>Morning</option><option>Afternoon</option><option>Evening</option><option>Night</option>
+          <option>Before meals</option><option>After meals</option><option>With meals</option><option>As needed</option>
+        </select></div>
+      <div><label class="fl">Notes (optional)</label><input class="fi" id="med-notes" placeholder="Doctor's instructions..."></div>
+    </div>
+    <button class="bp" style="margin-top:14px" onclick="saveMed()">Add medication</button>
+  </div>`;
+  document.body.appendChild(el);
+}
+
+async function saveMed() {
+  const name=(document.getElementById('med-name').value||'').trim();
+  if(!name){alert('Enter medication name');return;}
+  const med={name,dose:document.getElementById('med-dose').value,timing:document.getElementById('med-timing').value,notes:document.getElementById('med-notes').value,taken:false,addedAt:new Date().toISOString()};
+  if(!_log.meds)_log.meds=[];
+  _log.meds.push(med);
+  await saveLog(CU.id,istDate(),_log);
+  closeModal(); loadMedsPage();
+}
+
+async function toggleMed(i) {
+  _log.meds[i].taken = !_log.meds[i].taken;
+  await saveLog(CU.id,istDate(),_log);
+  loadMedsPage();
+}
+
+async function delMed(i) {
+  if(!confirm('Remove this medication?'))return;
+  _log.meds.splice(i,1);
+  await saveLog(CU.id,istDate(),_log);
+  loadMedsPage();
+}
+
+function addSupModal() {
+  const el=document.createElement('div');
+  el.className='mbg';el.id='_modal';
+  el.innerHTML=`
+  <div class="mbox">
+    <div class="mhd"><div class="mtitle">Add supplement</div><button class="xbtn" onclick="closeModal()">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div><label class="fl">Supplement name</label><input class="fi" id="sup-name" placeholder="e.g. Protein scoop, Omega-3..."></div>
+      <div><label class="fl">Dose / amount</label><input class="fi" id="sup-dose" placeholder="e.g. 1 scoop, 1 capsule, 500mg"></div>
+      <div><label class="fl">When</label>
+        <select class="fs" id="sup-timing">
+          <option>Morning</option><option>Pre-workout</option><option>Post-workout</option>
+          <option>With meals</option><option>Before bed</option><option>Any time</option>
+        </select></div>
+    </div>
+    <button class="bp" style="margin-top:14px" onclick="saveSup()">Add supplement</button>
+  </div>`;
+  document.body.appendChild(el);
+}
+
+async function saveSup() {
+  const name=(document.getElementById('sup-name').value||'').trim();
+  if(!name){alert('Enter supplement name');return;}
+  const sup={name,dose:document.getElementById('sup-dose').value,timing:document.getElementById('sup-timing').value,taken:false,addedAt:new Date().toISOString()};
+  if(!_log.supplements)_log.supplements=[];
+  _log.supplements.push(sup);
+  await saveLog(CU.id,istDate(),_log);
+  closeModal(); loadMedsPage();
+}
+
+async function toggleSup(i) {
+  _log.supplements[i].taken=!_log.supplements[i].taken;
+  await saveLog(CU.id,istDate(),_log);
+  loadMedsPage();
+}
+
+async function delSup(i) {
+  if(!confirm('Remove?'))return;
+  _log.supplements.splice(i,1);
+  await saveLog(CU.id,istDate(),_log);
+  loadMedsPage();
+}
+
+async function quickAddSup(name) {
+  if(!_log.supplements)_log.supplements=[];
+  _log.supplements.push({name,dose:'',timing:'Any time',taken:false,addedAt:new Date().toISOString()});
+  await saveLog(CU.id,istDate(),_log);
+  loadMedsPage();
+}
+
+// ── RE-INIT ───────────────────────────────────────────────────
+console.log('Comprehensive fix patch loaded ✓');
+</script>
